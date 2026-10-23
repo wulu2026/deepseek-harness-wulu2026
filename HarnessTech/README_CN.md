@@ -18,7 +18,9 @@ HarnessTech/
 │   ├── session-lifecycle.md           # Session 创建/恢复/追加/持久化/迁移/分叉/查询/销毁完整链路
 │   ├── evolution-timeline.md          # 关键版本节点、Breaking Change、架构决策演进时间线
 │   └── trust-boundary-map.md          # 沙箱/子进程/SSH/Terminal/网络的信任边界与权限矩阵
-├── deep-dives/                        # 按需产生的深潜记录（空，待填充）
+├── deep-dives/                        # 按需产生的深潜记录
+│   ├── local-desktop-build-and-dmg.md     # 本机 Desktop 构建与 DMG 安装实录
+│   └── local-desktop-build-and-dmg_CN.md  # 中文实录
 └── methodology/
     └── INSTITUTIONAL_RESEARCH_METHODOLOGY.md  # 归档的机构级研究方法论（初版，供参考）
 ```
@@ -35,6 +37,7 @@ HarnessTech/
 | 搞懂「为什么现在这么设计」 | `atlas/evolution-timeline.md` |
 | 搞懂安全边界、最小权限配置 | `atlas/trust-boundary-map.md` |
 | 看方法论演进 | `methodology/INSTITUTIONAL_RESEARCH_METHODOLOGY.md` |
+| 本机启动和安装 macOS Desktop | [`deep-dives/local-desktop-build-and-dmg_CN.md`](deep-dives/local-desktop-build-and-dmg_CN.md) |
 
 **建议阅读顺序**：`atlas/README.md` → `architecture-overview.md` → 挙兴趣跳转其余图。
 
@@ -56,5 +59,5 @@ HarnessTech/
 
 ---
 
-*最后更新：2026-10-14*
+*最后更新：2026-10-23*
 *维护者：wulu*
