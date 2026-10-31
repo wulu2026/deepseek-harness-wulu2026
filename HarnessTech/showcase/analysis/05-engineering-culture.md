@@ -41,4 +41,4 @@ Git 侧由 lefthook 守住：pre-commit 跑翻译配对、归档笔记保护、s
 2. **文化靠门禁传承**。「禁止新增 `as unknown`」「一个事实一个家」「waterfall 必须调 `next()`」这类约定，写在文档里会被遗忘，写成门禁才会存活。
 3. **覆盖率的选择**。逐文件 100% 是最有争议的一条（见 `06-independent-judgment.md`），但配套做法值得注意：他们不靠 `test` 命令跑覆盖率，而是把 `test:coverage` 单独设为 CI 门禁 [AGENTS.md]，本地开发和 CI 信号分离。
 
-*基于 develop 分支 2026-10-31 检出（版本号 dsh 0.2.2-alpha.2，release tag 后 362 个提交）*
+*基于 develop 分支 2026-10-31 检出（版本号 dsh 0.2.2-alpha.2）*

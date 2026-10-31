@@ -46,4 +46,4 @@ profile（具名组合，存于 Harness home）
 
 代价同样真实，见 `06-independent-judgment.md`。
 
-*基于 develop 分支 2026-10-31 检出（版本号 dsh 0.2.2-alpha.2，release tag 后 362 个提交）*
+*基于 develop 分支 2026-10-31 检出（版本号 dsh 0.2.2-alpha.2）*
