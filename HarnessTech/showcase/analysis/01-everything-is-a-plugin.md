@@ -14,7 +14,7 @@
 
 ## 规模感
 
-- 372 个 workspace 包，分 46 个组（`find packages -maxdepth 3 -name package.json` 实测）。
+- 372 个 workspace 包，分 53 个组（`find packages -maxdepth 3 -name package.json` 实测）。
 - `vendor/` 里钉着 9 个 Cordis 生态包的源码副本：cordis、cosmokit、group、hmr、include、loader、logger-console、schemastery、timer [vendor/]。
 - Cordis 本身有一篇 arXiv 论文背书：《A Programming Paradigm for Spatiotemporal Composability》[README.md:8]。
 
@@ -46,4 +46,4 @@ profile（具名组合，存于 Harness home）
 
 代价同样真实，见 `06-independent-judgment.md`。
 
-*基于 dsh 0.2.2-alpha.2（2026-10-29）*
+*基于 develop 分支 2026-10-31 检出（版本号 dsh 0.2.2-alpha.2，release tag 后 362 个提交）*

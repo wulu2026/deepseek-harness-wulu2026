@@ -51,7 +51,6 @@ body {
 
 .serif { font-family: 'Songti SC', 'STSong', 'SimSun', serif; }
 .mono { font-family: 'JetBrains Mono', monospace; }
-.latin-display { font-family: 'Gloock', 'Songti SC', serif; }
 
 /* ===== 舞台：竖屏居中 ===== */
 .stage {
@@ -667,9 +666,9 @@ mark.key {
       <h1 class="cover-title">把<span class="gold">「插件」</span><br>做到极致</h1>
       <div class="cover-en">DeepSeek Harness</div>
       <div class="cover-stats">
-        <div class="stat"><div class="num" data-count="372">0</div><div class="label">插件包 · 46 组</div></div>
+        <div class="stat"><div class="num" data-count="372">0</div><div class="label">插件包 · 53 组</div></div>
         <div class="stat"><div class="num" data-count="330">0</div><div class="label">工程门禁脚本</div></div>
-        <div class="stat"><div class="num" data-count="15">0</div><div class="label">种会话事件</div></div>
+        <div class="stat"><div class="num" data-count="14">0</div><div class="label">种会话事件</div></div>
       </div>
     </div>
     <div class="scroll-hint">向上滑动 · 开始下潜</div>
@@ -702,7 +701,7 @@ mark.key {
     <div class="timeline" id="timeline">
       <div class="tl-node durable"><div class="ev">turn/start</div><div class="desc">开启一轮：认领输入，组装 prompt 与工具 schema</div></div>
       <div class="tl-node live"><div class="ev">agent/pre-step · 瀑布</div><div class="desc">监听者可接受、改写、拒绝这一步</div></div>
-      <div class="tl-node durable"><div class="ev">step/start</div><div class="desc">冻结模型历史，准备请求</div></div>
+      <div class="tl-node durable"><div class="ev">step/start</div><div class="desc">组装请求，冻结模型历史</div></div>
       <div class="tl-node durable"><div class="ev">assistant/message</div><div class="desc">流式调用落地为一条完整消息</div></div>
       <div class="tl-node durable"><div class="ev">tool/call → tool/result</div><div class="desc">工具执行，结果回写日志</div></div>
       <div class="tl-node durable"><div class="ev">step/end → turn/end</div><div class="desc">无欠债，关闭这一轮</div></div>
@@ -811,7 +810,7 @@ mark.key {
       <div class="finale-line">深海之下，<br>星光为引。</div>
       <p class="finale-sub">六篇源码分析已同步发布，逐条证据可溯。</p>
       <span class="finale-cta">关注 · 一起深潜</span>
-      <div class="finale-meta">基于 dsh 0.2.2-alpha.2 源码 · 2026-10</div>
+      <div class="finale-meta">dsh 0.2.2-alpha.2 · develop 分支 · 2026-10</div>
     </div>
   </section>
 

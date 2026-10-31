@@ -4,7 +4,7 @@
 
 ## 事件溯源
 
-`Session` 是内存中的追加型 `SessionEvent` 日志，LLM 消息历史由 `deriveMessages()` 从日志**派生**，而非单独维护一份状态 [docs/subsystems/session.md:5-11]。核心事件类型在 `SessionEventMap` 里定义，共 15 种，每个都带完整 JSDoc 契约：`turn/start`、`turn/end`、`step/start`、`step/end`、`user/message`、`developer/message`、`system/message`、`assistant/message`、`assistant/attempt`、`tool/call`、`tool/result`、`request/header`、`request/context` 等 [packages/core/session/src/types.ts:287-327]。
+`Session` 是内存中的追加型 `SessionEvent` 日志，LLM 消息历史由 `deriveMessages()` 从日志**派生**，而非单独维护一份状态 [docs/subsystems/session.md:5-11]。核心事件类型在 `SessionEventMap` 里定义，共 14 种，每个都带完整 JSDoc 契约：`turn/start`、`turn/end`、`step/start`、`step/end`、`user/message`、`developer/message`、`system/message`、`assistant/message`、`assistant/attempt`、`tool/call`、`tool/result`、`request/header`、`request/context` 等 [packages/core/session/src/types.ts:287-327]。
 
 铁律是「**模型可见 ⟺ 已记录**」：任何到达模型请求的输入必须能从会话日志重建；新增模型可见输入，就必须新增会话事件 [docs/architecture.md:128]。这条不变量把「AI 看到了什么」这个通常只能靠猜的问题，变成了日志查询。
 
@@ -30,4 +30,4 @@
 
 Agent 产品的测试死结是模型输出的不确定性。dsh 的解法是：既然一切模型交互都已经是日志里的事件，那就把日志本身变成测试输入。**架构选择直接消灭了测试难题**，这是事件溯源最漂亮的一次兑现。
 
-*基于 dsh 0.2.2-alpha.2（2026-10-29）*
+*基于 develop 分支 2026-10-31 检出（版本号 dsh 0.2.2-alpha.2，release tag 后 362 个提交）*

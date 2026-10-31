@@ -37,4 +37,4 @@ Consumer 不关心、也无法关心背后是哪个 Provider——它 import 的
 2. 三角色的命名让 code review 有了共同语言——「这个 PR 只做了 Definition 没有 Provider」是立刻可识别的半成品。
 3. 它也是理解 dsh 包数量的钥匙：372 个包之所以不是灾难，是因为大量包只是同一条缝的不同 Provider，心智成本被三角色结构摊平了。
 
-*基于 dsh 0.2.2-alpha.2（2026-10-29）*
+*基于 develop 分支 2026-10-31 检出（版本号 dsh 0.2.2-alpha.2，release tag 后 362 个提交）*

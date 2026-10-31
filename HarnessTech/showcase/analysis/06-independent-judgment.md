@@ -12,7 +12,7 @@
 
 ## 三个真代价
 
-**1. 认知税极高。** 372 个包、46 个分组、五个事件分发模式、三个事件域、能力缝三角色——在读第一行代码之前，你需要先学会两门方言（Cordis + dsh 约定）。`docs/cordis-primer.md`、`docs/architecture.md`、62 个包组 README 是硬性前置阅读。全插件换来的一切都先以复杂度形式预付了。
+**1. 认知税极高。** 372 个包、53 个分组、五个事件分发模式、三个事件域、能力缝三角色——在读第一行代码之前，你需要先学会两门方言（Cordis + dsh 约定）。`docs/cordis-primer.md`、`docs/architecture.md`、53 个包组 README 是硬性前置阅读。全插件换来的一切都先以复杂度形式预付了。
 
 **2. pre-stable 的流动性。** 官方明言「会有兼容性破坏变更」[README.md:13]；`SESSION_FORMAT_VERSION` 已经迭代到 4 [types.ts:68-90]；升级指南写作有专门的 skill（`dsh-create-upgrade-guide`），说明 breaking change 是日常而非例外。会话格式有世代保留纪律兜底，但 API 消费者要有跟着升级的心理准备。
 
@@ -28,4 +28,4 @@
 
 dsh 的价值不在于它是一个「更好用的 agent 框架」，而在于它示范了一件事：**当 AI 开始大量生产代码，一个软件项目该如何重新设计自己的架构、测试与文化，才能让复杂度仍然可控。**
 
-*基于 dsh 0.2.2-alpha.2（2026-10-29）*
+*基于 develop 分支 2026-10-31 检出（版本号 dsh 0.2.2-alpha.2，release tag 后 362 个提交）*
