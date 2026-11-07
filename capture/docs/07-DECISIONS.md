@@ -84,3 +84,10 @@
 - 决策：本地开发与阶段 1 使用 @local 范围；发布时改为 registry 范围，可能 `@deepseek-ai`/作者范围。
 
 更新：新增决策追加到此文件并更新 PROGRESS.md。
+---
+
+## ADR-015 — Host exposure via webServer exact routes, not Typert, for Phase 1/2
+- 状态：Accepted
+- 日期：2026-11-07
+- 决策：Capture Phase 1/2 的 Host API 使用 `ctx.webServer` 的 `/api/capture/*` exact routes + dsh-archived trust gate；不采用 `@Remote` / Typert build pipeline。Typert/二进制与 stream 通道延后到 Phase 3+ 需要时再评估。
+- 后果：客户端用 same-origin `fetch`，mutation 返回 payload 供 optimistic update； progress 采用 polling；remote/proxy 复杂度显著降低。
