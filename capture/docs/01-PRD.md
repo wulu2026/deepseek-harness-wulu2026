@@ -1,453 +1,243 @@
 # Capture — PRD (01)
 
-
-
 ## 1. 范围定义
 
-
-
-### 1.1 In scope (v1.0)
-
-
+### 1.1 范围内（v1.0）
 
 - 创作数据模型：Project / Chapter / Scene / Shot / Asset / Generation / Trailer
-
-- 对话驱动的 CRUD（agent tools + UI 面板）
-
-- 资产库复用与 "identity lock"
-
-- 生成：character image / shot still / shot video / trailer
-
-- Provenance & 版本
-
+- 对话驱动的增删改查（智能体工具 + UI 面板）
+- 资产库复用与“身份锁定”（identity lock）
+- 生成：角色图 / 镜头静帧 / 镜头视频 / 预告片
+- 来源追溯与版本
 - 导出：Markdown / JSON / .docx（文本）+ mp4（视频）
+- 与 DSH 的会话、智能体、交付物、作业、存储集成
 
-- 与 DSH 的 session、agent、deliverables、jobs、storage 集成
-
-
-
-### 1.2 Out of scope (v1)
-
-
+### 1.2 范围外（v1）
 
 - 多人协作 / 共享作品库 / 市场（Market）（v2）
+- 时间线编辑器（v2）
+- 移动端 / Web（UI 兼容 Web 但不测试，v2）
+- 非 DeepSeek 提供的专有生成模型比价（v2）
+- 版权 / 许可（v2）
 
-- Timeline editor（v2）
-
-- 移动端 / web（UI web 兼容但不测，v2）
-
-- 非 DeepSeek 提供的 proprietary 生成 model 比价（v2）
-
-- 版权/ licensing（v2）
-
-
-
-## 2. 用户画像 & 用例 (Use cases)
-
-
+## 2. 用户画像 & 用例（Use cases）
 
 ### UC-1 新作品（Writer-A）
 
-1. 在 DSH session 中输入 `/story new "末日都市" / genre: 赛博朋克`。
-
-2. Outline Agent 提议 6 髥主要角色 + 3 幕结构；作家接受/修改。
-
-3. 作家： "第1章，主角爬塔。" → Story Agent 生成章节草稿（markdown）。
-
-4. "拆分镜" → Shot Director Agent 生成 8 个 shots + camera/action/dialogue。
-
-5. "给我主角的设定图" → 角色图生成 (image gen)。
-
-6. "生成第3个 shot 的视频" → shot video 生成。
-
-7. "把 2 个高光拼成 30s 宣传片" → trailer 生成。
-
-8. present() 交付 mp4; 用户下载.
-
-
+1. 在 DSH 会话中输入 `/story new "末日都市" / genre: 赛博朋克`。
+2. 大纲智能体提议 6 个主要角色 + 三幕结构；作家接受/修改。
+3. 作家：“第1章，主角爬塔。” → 故事智能体生成章节草稿（markdown）。
+4. “拆分镜” → 镜头导演智能体生成 8 个镜头 + 镜头/动作/对白。
+5. “给我主角的设定图” → 角色图生成（图像生成）。
+6. “生成第3个镜头的视频” → 镜头视频生成。
+7. “把 2 个高光拼成 30 秒宣传片” → 预告片生成。
+8. `present()` 交付 mp4；用户下载。
 
 ### UC-2 一致性（Writer-A）
 
-- 创建资产 "主角-林"（character），绑定 4 张参考图 + style seed。
-
-- 在 shot 4 中使用该 asset; 生成 still 自动 inject identity lock.
-
-- 后续 regenerate 可 "use seed X / same refs".
-
-
+- 创建资产“主角-林”（character），绑定 4 张参考图 + 风格种子。
+- 在镜头 4 中使用该资产；生成静帧时自动注入身份锁定。
+- 后续重新生成可“使用种子 X / 相同参考图”。
 
 ### UC-3 剧本（Writer-B）
 
-- 导入现有 .docx 剧本 (start fresh from template).
-
-- Shot list 从 beat sheet 自动生成；VDerive camera/locations.
-
-- 导出 screenplay.md (Fountain-ish) + shot list.csv.
-
-
+- 导入现有 .docx 剧本（从模板重新开始）。
+- 镜头清单从节拍表自动生成；并派生镜头/地点。
+- 导出 screenplay.md（Fountain 风格）+ shot list.csv。
 
 ### UC-4 宣传片剪切（Creator-D）
 
-- 从已完成作品导入 "高光 beats" → 生成 30s trailer with title cards.
-
-- 两种风格：trailer (cinematic) / social (9:16 vertical crop).
-
-
+- 从已完成作品导入“高光节拍” → 生成带标题卡的 30 秒预告片。
+- 两种风格：预告片（电影感）/ 社交（9:16 竖版裁剪）。
 
 ### UC-5 迭代分支
 
-- Writer fork chapter 4 → try ending A/B; compare diff → pick.
+- 作家分叉第 4 章 → 尝试 A/B 结局；比较差异 → 选择。
+- 通过子智能体对比一致性问题。
 
-- 通过 subagent 对比 consistency issues.
+### UC-6 智能体自动一致性检查
 
+- 一致性智能体扫描已完成内容 → 标记：“林在镜头 9 的头发颜色与资产不匹配” → 提出修复建议。
 
+## 3. 信息架构（用户侧）
 
-### UC-6 Agent 自动一致性检查
+见 [`02-PRODUCT-DESIGN.md`](02-PRODUCT-DESIGN.md) §2。
 
-- Consistency Agent 扫达成时 scan → flag: "林 在 shot 9 的头发颜色与 asset 不匹配" → propose fix.
+4 个主视图（DSH 槽位 `main` 右侧面板？或 `conversation` 旁）：
 
+- **工作室面板** = 项目/章节/分镜（树形）+ 详情编辑器
+- **资产库** = 资产列表 + 生成器
+- **生成队列与结果** = 进行中 / 历史
+- **预告片工作室** = 高光挑选 + 风格 + 导出
 
+DSH 的 main 视图是会话驱动（`uiWorkspace.openSession`），我们计划：
 
-## 3. 信息架构 (User-facing)
-
-
-
-见 [`02-PRODUCT-DESIGN.md`](02-PRODUCT-DESIGN.md) §2.
-
-
-
-4 个主视图 (DSH slot `main` 右侧 panel? 或 `conversation` 旁):
-
-- **Studio Panel** = 项目/章节/分镜（树形）+ 详情 editor
-
-- **Asset Library** = 资产列表 + 生成器
-
-- **Generation Queue & Results** = 진행 중 / history
-
-- **Trailer Studio** = 高光挑选 + 风格 + 导出
-
-
-
-DSH 的 main view 是 session-driven（`uiWorkspace.openSession`），我们 plan to:
-
-- use `settings.general.item` to register a **"Capture" settings/page** (optional)
-
-- use `main` slot or `shell.overlay`? Prefer a **side-panel blade**? Actually DSH web's `main` shows conversation by session. We design as **Session-scoped**: each Session *can* be bound to a Project. Opening "Capture" panel opens a session-tied studio (plugin-owned subview) via `shell.overlay` or a `main` slot registration. Detail in TECH.
-
-
+- 使用 `settings.general.item` 注册一个 **“Capture”设置/页面**（可选）
+- 使用 `main` 槽位还是 `shell.overlay`？更倾向于**侧边面板 blade**？实际上 DSH Web 的 `main` 按会话显示对话。我们设计为**会话范围**：每个会话*可以*绑定到一个项目。打开“Capture”面板会通过 `shell.overlay` 或 `main` 槽位注册打开一个与会话绑定的工作室（插件自有子视图）。细节见 TECH。
 
 ## 4. 功能矩阵 & 优先级
 
-
-
-| ID | 功能 | Phase | Prio | Owner Agent |
-
+| ID | 功能 | 阶段 | 优先级 | 负责智能体 |
 |---|---|---|---|---|
+| F1.1 | 项目增删改查（名称、类型、一句话梗概） | 1 | P0 | Story Manager |
+| F1.2 | 章节/场景增删改查 | 1 | P0 | Story Manager |
+| F1.3 | 富文本编辑器（markdown + 块） | 1 | P0 | UI |
+| F1.4 | 大纲 / 节拍表 | 1 | P1 | Outline Agent |
+| F2.1 | 镜头实体增删改查 | 1 | P0 | Shot Director |
+| F2.2 | 镜头清单版本 | 1 | P1 | Story Manager |
+| F2.3 | Fountain 风格剧本导入/导出 | 1 | P1 | Exporter |
+| F3.1 | 资产增删改查（角色/道具/地点/风格） | 1 | P0 | Asset Manager |
+| F3.2 | 资产版本管理 | 1 | P1 | Asset Manager |
+| F3.3 | 参考图上传（文件） | 1 | P0 | UI |
+| F3.4 | 身份锁定模板 | 1 | P0 | Asset Manager |
+| F4.1 | 角色图生成 | 2 | P0 | Gen Agent |
+| F4.2 | 镜头静帧生成 | 2 | P0 | Gen Agent |
+| F4.3 | 镜头视频生成 | 3 | P0 | Gen Agent |
+| F4.4 | 预告片剪辑 | 3 | P0 | Trailer Agent |
+| F4.5 | 竖版/社交裁剪 | 3 | P2 | Trailer Agent |
+| F5.1 | 资产绑定到镜头 | 2 | P0 | Shot Director |
+| F5.2 | 一致性检查（智能体） | 2 | P1 | Consistency Agent |
+| F6.1 | 分支/分叉 + 差异 + 选择 | 1 | P1 | Story Manager |
+| F7.1 | 高光节拍 → 预告片 | 3 | P0 | Trailer Agent |
+| F7.2 | 标题卡 / 字幕 | 3 | P2 | Trailer Agent |
+| F8.1 | 大纲/场景/镜头智能体 | 1 | P0 | 全部 |
+| F8.2 | 一致性智能体 | 2 | P1 | 全部 |
+| F9.1 | 导出 md/json/docx | 1 | P1 | Exporter |
+| F9.2 | 导出 mp4 + `present()` | 3 | P0 | Exporter |
 
-| F1.1 | Project CRUD（name, genre, logline） | 1 | P0 | Story Manager |
+## 5. 数据 & 状态（数据契约）
 
-| F1.2 | Chapter/Scene CRUD | 1 | P0 | Story Manager |
+### 5.1 规范实体
 
-| F1.3 | Rich text editor（markdown + block） | 1 | P0 | UI |
-
-| F1.4 | Outline / beat sheet | 1 | P1 | Outline Agent |
-
-| F2.1 | Shot entity CRUD | 1 | P0 | Shot Director |
-
-| F2.2 | Shot list 版本 | 1 | P1 | Story Manager |
-
-| F2.3 | Fountain-ish screenplay import/export | 1 | P1 | Exporter |
-
-| F3.1 | Asset CRUD (character/prop/location/style) | 1 | P0 | Asset Manager |
-
-| F3.2 | Asset versioning | 1 | P1 | Asset Manager |
-
-| F3.3 | Reference image upload (file) | 1 | P0 | UI |
-
-| F3.4 | Identity lock template | 1 | P0 | Asset Manager |
-
-| F4.1 | Character image gen | 2 | P0 | Gen Agent |
-
-| F4.2 | Shot still gen | 2 | P0 | Gen Agent |
-
-| F4.3 | Shot video gen | 3 | P0 | Gen Agent |
-
-| F4.4 | Trailer cut | 3 | P0 | Trailer Agent |
-
-| F4.5 | Vertical/social crop | 3 | P2 | Trailer Agent |
-
-| F5.1 | Asset binding to shot | 2 | P0 | Shot Director |
-
-| F5.2 | Consistency check (agent) | 2 | P1 | Consistency Agent |
-
-| F6.1 | Branch/fork + diff + pick | 1 | P1 | Story Manager |
-
-| F7.1 | Highlight beats → trailer | 3 | P0 | Trailer Agent |
-
-| F7.2 | Title cards / captions | 3 | P2 | Trailer Agent |
-
-| F8.1 | Outline/Scene/Shot agents | 1 | P0 | all |
-
-| F8.2 | Consistency Agent | 2 | P1 | all |
-
-| F9.1 | Export md/json/docx | 1 | P1 | Exporter |
-
-| F9.2 | Export mp4 + present() | 3 | P0 | Exporter |
-
-
-
-## 5. 数据 & 状态（data contracts）
-
-
-
-### 5.1 Canonical entities
-
-
-
-```
-
+```text
 Project {
-
   id, name, genre, logline, audience?, tone?,
-
   stylePackId?, createdAt, updatedAt,
-
   chapters: [ChapterId], assets: [AssetId]
-
 }
-
 Chapter { id, projectId, index, title, synopsis, beats[], status, text(md), wordCount }
-
 Scene? (optional; chapter -> shots directly OR via scene; we keep optional scene for screenplay mode)
-
 Shot {
-
   id, projectId, chapterId?, sceneId?,
-
   order, durationSec,
-
   type: establishing|character|action|dialogue|insert|transition,
-
   description (narrative / action),
-
   dialogue?: { speaker, text, v.o? },
-
   camera: { shotSize, angle, movement, lens? },
-
   transition?: { type, duration },
-
   audio?, sfx?, music?,
-
   assetBindings: { characters:[AssetId], props:[], location?, stylePack? },
-
   generation?: { stillImageId?, videoClipId?, lastGeneratedAt, seed? },
-
   variants?: ShotVariant[]
-
 }
-
 Asset {
-
   id, projectId, kind: character|prop|location|stylePack,
-
   name, description,
-
   referenceImages: [fileRef],
-
   tags[], traits (character: age, gender, hair, voice...),
-
   identityLockPrompt (generated), version, createdAt, updatedAt,
-
   usedBy: [{ shotId, role }]
-
 }
-
 Generation {
-
   id, kind, sourceShotId? , assetId?,
-
   status: queued|running|done|failed|cancelled,
-
   progress, startedAt, finishedAt,
-
   params (prompt, seed, model, width, height, duration, ...),
-
   outputs: [fileRef],
-
   provenance: { shotId, assetVersions, promptHash }
-
 }
-
 Trailer {
-
   id, projectId, style: cinematic|social|vertical,
-
   durationTargetSec, beats: [shotId|highlight], titleCards[],
-
   status, outputs: [mp4Ref], progress
-
 }
-
 ```
 
+### 5.2 存储放置
 
+- 主机存储域：插件命名空间 `capture`（在技术验证中确认；见开放问题 Q1）。
+- JSON 文件位于 `$DSH_HOME/storages/capture/` 或插件自有应用数据目录（检查后确定）。
+- 媒体：`$DSH_HOME/.../capture/media/<projectId>/<assetId>/...` + 通过 DSH 交付物/引用服务提供文件引用。
+- **按会话 vs 全局**：项目是全局实体（跨会话），媒体文件是全局的。会话只持有当前“工作集”指针 + 智能体上下文 + 聊天。这对 DSH 不寻常（大多数状态是会话派生的）。理由：作为存储服务 + 其上投影；允许任意会话中的智能体打开项目。
 
-### 5.2 Storage placement
+### 5.3 事件溯源考虑
 
+按 DSH 实践：会话日志是事实来源。我们的项目位于主机存储（域存储），不在会话日志中。为了让智能体重放和智能体分叉工作安全：
 
+- **插件存储是项目的单一事实来源（SSOT）**；会话仅引用 projectId。
+- **会话可以分叉项目** → 新 projectId（插件存储中深拷贝）或“分支”指针。我们将每个会话的插件存储变更记录为 Operation 记录（日志），以便撤销可用。
+- 生成结果在聊天中作为插件记录引用？避免新增会话事件类型（实践 #16 说不要追加 `type: new`）。改用现有 `assistant/message` + `tool/result` 事件；在主机存储 Generation 数据库行。智能体通过工具结果看到。
 
-- Host storage domain: plugin namespace `capture`（validate in spike; see OPEN QUESTIONS Q1）.
+## 6. 智能体 & 模型策略
 
-- JSON files under `$DSH_HOME/storages/capture/` or plugin's own app-data dir (TBD after inspection).
+- 智能体通过 DSH 智能体预设（技能）定义。每个专用智能体有系统提示词 + 工具范围：
+  - **Story Manager**（编排器）：创建项目/章节/镜头清单，分叉，合并。
+  - **Outline Agent**：节拍与结构。
+  - **Shot Director**：从节拍/场景生成镜头清单。
+  - **Consistency Agent**：检查资产与镜头使用，报告不匹配（只读建议）。
+  - **Asset Manager**：从文本创建/复用资产。
+  - **Gen Agent**（图像/视频）：生成作业与提示词编译。
+  - **Trailer Agent**：节拍选择与预告片编译。
+  - **Exporter**：导出格式 + present。
+- 工具面通过 `ctx.tools` 注册：`capture.*` 工具（需验证实际 API）。
+- 重推理使用子智能体以保持主上下文精简（按实践 #28 — 后续）。
 
-- Media: `$DSH_HOME/.../capture/media/<projectId>/<assetId>/...` + file references via DSH deliverable/reference service.
+## 7. 提供商抽象（生成）
 
-- **Per-session vs global**: Projects are global entities (cross-session), media files are global. Session only holds the active "working set" pointer + agent context + chat. This is unusual for DSH (most state is session-derived). Justify as storage service + projection on top; allow an agent in any session to open a project.
-
-
-
-### 5.3 Event-sourcing considerations
-
-
-
-Per DSH practices: session log is source of truth. Our Projects live in host storage (domain store), not session log. To let agents replay and agents fork work safely:
-
-- **Plugin storage is the SSOT for Projects**; sessions reference projectId only.
-
-- **Session can fork a project** → new projectId (deep copy in plugin storage) or "branch" pointer. We record plugin storage mutation per session as an Operation record (journal) so undo works.
-
-- Generation results referenced in chat as plugin records? Avoid new session event types (practice #16 says don't append `type: new`). Instead use existing `assistant/message` + `tool/result` events; store Generation DB row on host. Agent sees via tool results.
-
-
-
-## 6. Agent & Model strategy
-
-
-
-- Agents are defined via DSH agent preset (skills). Each specialized agent has system prompt + tools scope:
-
-  - **Story Manager** (orchestrator): create project/chapter/shotlist, fork, merge.
-
-  - **Outline Agent**: beats & structure.
-
-  - **Shot Director**: shot list from beat/scene.
-
-  - **Consistency Agent**: checks asset vs shot usage, reports mismatches (read-only propose).
-
-  - **Asset Manager**: create/reuse assets from text.
-
-  - **Gen Agent** (image/video): generation jobs & prompt compilation.
-
-  - **Trailer Agent**: beat selection & trailer compile.
-
-  - **Exporter**: export formats + present.
-
-- Tool surface via `ctx.tools` registration: `capture.*` tools (we need verify actual API).
-
-- Subagents for heavy reasoning to keep main context lean (per practice #28 — followup).
-
-
-
-## 7. Provider abstraction (Generation)
-
-
-
-```
-
+```text
 interface MediaProvider {
-
   generateImage(params): { outputPaths, seed, model }
-
   generateVideo(params): { outputPaths, duration }
-
   capabilities: {...}
-
 }
-
 ```
 
+实现：
 
+- **DeepSeek 账户（如果支持图像）** — 待检查账户 API。
+- **通用 HTTP 图像 API**（用户提供 base URL + key；OpenAI 兼容 `/images/generations`、Stability 等）
+- **本地**（ComfyUI/A1111 + ffmpeg 拼接）— 可选，阶段 3。
+- **模拟提供商**（阶段 1/开发与测试，通过 sharp/占位图生成占位图像）。
 
-Implementations:
-
-- **DeepSeek account (if supports image)** — TBD inspect account API.
-
-- **Generic HTTP image API** (user supplies base URL + key; OpenAI-compatible `/images/generations`, Stability, etc.)
-
-- **Local** (ComfyUI/A1111 + ffmpeg for stitching) — optional, Phase 3.
-
-- **Mock provider** (Phase 1/development & tests, produces placeholder images via sharp/placeholder).
-
-
-
-Phase 1 ships only Mock + a thin HTTP provider; real APIs validated in Spike (see OPEN QUESTIONS Q2/Q3).
-
-
+阶段 1 仅交付模拟 + 轻量 HTTP 提供商；真实 API 在技术验证中确认（见开放问题 Q2/Q3）。
 
 ## 8. 验收标准
 
+阶段 1：
 
+- E1：`/story new "X"` + `/story chapter add` + `/story shotlist generate` 生成项目 + 章节 + 5 个镜头；显示在工作室面板。
+- E2：智能体可通过 `capture.shot.update` 编辑镜头对白；显示差异。
+- E3：创建资产 + 绑定到镜头；一致性警告可见。
+- E4：分叉章节 → 2 个分支；选择胜出恢复。
+- E5：导出 screenplay.md + shotlist.csv。
+- E6：主机冒烟 & 客户端冒烟通过；兼容性检查通过。
 
-Phase 1:
+阶段 2：
 
-- E1: `/story new "X"` + `/story chapter add` + `/story shotlist generate` produces Project + Chapter + 5 Shots; shown in Studio Panel.
+- E7：角色图生成 + 预览；来源追溯存储。
+- E8：相同种子重新生成可复现（提供商允许时）。
 
-- E2: Agent can edit shot_dialogue via `capture.shot.update`; diff shown.
+阶段 3：
 
-- E3: Asset create + bind to shot; consistency warning visible.
+- E9：镜头视频生成 + 预告片导出（mp4）`present()`。
 
-- E4: Fork chapter → 2 branches; pick winner restores.
+## 9. 风险缓解的具体承诺
 
-- E5: Export screenplay.md + shotlist.csv.
-
-- E6: Host smoke & client smoke pass; compat-check passes.
-
-Phase 2:
-
-- E7: Character image gen + previews; provenance stored.
-
-- E8: Regenerate with same seed reproduces (provider permitting).
-
-Phase 3:
-
-- E9: Shot video generation + trailer export (mp4) present().
-
-
-
-## 9. 风险缓解的具体 commit
-
-
-
-- Phase 1 强制做 session-replay 验证（restart DSH; projects persist via host storage).
-
-- 所有生成输出写到 `$DSH_HOME/.../capture/media`, 并用 DSH `present()` + `deliverable` file ref，so they are first-class.
-
-- Job 取消 & 部分失败 recovery: 每 job 提供 retry + clean up temp.
-
-- Consistency warnings 仅 propose, 不 auto-change (human in loop).
-
-
+- 阶段 1 强制做会话重放验证（重启 DSH；项目通过主机存储持久化）。
+- 所有生成输出写到 `$DSH_HOME/.../capture/media`，并用 DSH `present()` + `deliverable` 文件引用，使其成为一等公民。
+- 作业取消 & 部分失败恢复：每个作业提供重试 + 清理临时文件。
+- 一致性警告仅建议，不自动更改（人在回路）。
 
 ## 10. 发布 & 版本
 
+- v0.1.0：内部测试（阶段 1 完成）
+- v0.2.0：带图像生成的 beta（阶段 2）
+- v0.3.0：视频 + 预告片（阶段 3）
+- v1.0.0：公开 bundle（阶段 4）
 
+MS/semver；见 MILESTONES。
 
-- v0.1.0: internal test（Phase 1 done）
+## 11. 指标埋点（阶段 1 即埋点，默认关闭）
 
-- v0.2.0: beta with image gen（Phase 2）
-
-- v0.3.0: video + trailer（Phase 3）
-
-- v1.0.0: public bundle (Phase 4)
-
-MS/semver; see MILESTONES.
-
-
-
-## 11. 指标 instrument（Phase 1 即埋点 off by default）
-
-
-
-- `projects_created`, `shots_generated`, `asset_reuse_count`, `agent_edit_accepted/rejected`, `gen_jobs_*`, `trailer_exports`.
-
-- 通过 `dsh-client-product-analytics`（optional service, 注入). We call only if present.
+- `projects_created`、`shots_generated`、`asset_reuse_count`、`agent_edit_accepted/rejected`、`gen_jobs_*`、`trailer_exports`。
+- 通过 `dsh-client-product-analytics`（可选服务，注入）。仅在存在时调用。

@@ -1,353 +1,178 @@
 # Capture — 产品设计 (02)
 
-
-
 ## 1. 设计原则
 
-
-
-1. **Conversation-first**：创作的 primarily interface 是聊天；面板是可视化视图与精 editorial tools。
-
-2. **Structure > prose**: 每个 artifact (chapter, shot) 都是结构化数据 + Rendered text; agent 与人共同维护.
-
-3. **Asset centric consistency**: 文本、镜头、生成结果都 link assets; 维护 identity 是第一优先.
-
-4. **Gradual fidelity**: text → shot → still → clip → trailer, 每层可跳过/回退。
-
-5. **Provenance everywhere**: 展示 "generated from shot X with asset Y v2".
-
-6. **No blocking generation**: 长任务进入 jobs panel; UI stays responsive.
-
-7. **Readable in 2 themes**: 浅/深主题 tokens only.
-
-8. **Keyboard & focus**: 基本 DSH patterns.
-
-
+1. **对话优先（Conversation-first）**：创作的主要界面是聊天；面板是可视化视图与精细编辑工具。
+2. **结构优先于散文（Structure > prose）**：每个产物（章节、镜头）都是结构化数据 + 渲染文本；智能体与人共同维护。
+3. **以资产为中心的一致性（Asset centric consistency）**：文本、镜头、生成结果都关联资产；维护身份一致性是第一优先级。
+4. **渐进式保真（Gradual fidelity）**：文本 → 镜头 → 静帧 → 片段 → 预告片，每层可跳过/回退。
+5. **处处可追溯（Provenance everywhere）**：展示“由镜头 X 使用资产 Y v2 生成”。
+6. **生成不阻塞（No blocking generation）**：长任务进入作业面板；UI 保持响应。
+7. **两种主题下可读**：仅使用浅/深主题 token。
+8. **键盘与焦点**：遵循基本 DSH 模式。
 
 ## 2. 信息架构 (IA)
 
-
-
-```
-
+```text
 Session (DSH)
-
-└─ (optional bound ProjectId)
-
-Project (global plugin storage)
-
+└─ (optional bound ProjectId)        # 可选绑定 ProjectId
+Project (global plugin storage)      # 项目（全局插件存储）
 ├─ Chapters
-
 │   └─ Scenes (optional)
-
 │       └─ Shots (shot list / versioned)
-
 ├─ Assets
-
 │   ├─ Characters
-
 │   ├─ Props
-
 │   ├─ Locations
-
 │   └─ Style Packs
-
-├─ Generations (images/videos)
-
+├─ Generations (images/videos)       # 生成（图像/视频）
 ├─ Trailers
-
-└─ Branches (forks)
-
+└─ Branches (forks)                  # 分支（分叉）
 ```
 
+### 客户端 UI 界面（DSH 槽位）
 
+- `sidebar.workspaces.session.menu.item` → “Capture：打开工作室”操作（按会话）（行操作）
+- `main` 槽位或 `shell.overlay` → 工作室面板（更倾向覆盖式侧板或右侧面板；细节见 Q4）
+- `settings.general.item` → Capture 设置区
+- `conversation.input.dock`？（可选）→ 项目绑定时显示快捷操作栏（例如“生成镜头图”）
+- `conversation.chat.node` → 不需要注册事件渲染器：聊天保持标准；我们的工具以标准消息插入结果引用。
+- `shell.overlay` → 对话框：生成进度、分支差异、预告片预览、导出。
 
-### Client UI surfaces (DSH slots)
-
-
-
-- `sidebar.workspaces.session.menu.item` → "Capture: 打开 Studio" action (per session) (row action)
-
-- `main` slot OR `shell.overlay` → Studio Panel (we prefer an overlay blade or right-side panel; detail Q4)
-
-- `settings.general.item` → Capture settings section
-
-- `conversation.input.dock`? (optional) → quick actions bar when a Project is bound (e.g. "生成 shot 图")
-
-- `conversation.chat.node` → register event renderers? Not needed: chat remains standard; our tools insert result references as standard messages.
-
-- `shell.overlay` → dialogs: generation progress, branch diff, trailer preview, export.
-
-
-
-Decision: **Project binding Lives in Session**. Open a session → if Project bound, show Studio Panel entry. If no project bound, Studio Panel offers "Create / Open Project" in a lightweight overlay.
-
-
+决策：**项目绑定存在于会话中**。打开会话 → 如果绑定了项目，显示工作室面板入口。如果未绑定项目，工作室面板在轻量覆盖层中提供“创建/打开项目”。
 
 ## 3. 主要用户旅程 (Journeys)
 
-
-
 ### J1 创建新作品 (5 min)
 
-
-
+```text
+用户："创建小说作品《末日都市》赛博朋克"
+  → Story Manager 创建 Project + 默认资产文件夹。
+UI：工作室面板打开到项目主页（概览、空章节）。
+用户："写第一章：主角爬塔"
+  → Outline/Story 智能体起草第 1 章 markdown + 节拍。
+UI：章节编辑器显示草稿；节拍列表在右侧面板。
+用户："把第一章拆分镜，时长约2分钟"
+  → Shot Director 生成 8 个镜头（每个约 15 秒）。
+UI：镜头清单视图。
 ```
-
-User: "创建小说作品《末日都市》赛博朋克"
-
-  → Story Manager creates Project + default assets folder.
-
-UI: Studio Panel opens to Project Home (overview, empty chapters).
-
-User: "写第一章：主角爬塔"
-
-  → Outline/Story agents draft Chapter 1 markdown + beats.
-
-UI: Chapter editor shows draft; beats list right panel.
-
-User: "把第一章拆分镜，时长约2分钟"
-
-  → Shot Director generates 8 shots (duration ~ 15s each).
-
-UI: Shot list view.
-
-```
-
-
 
 ### J2 生成角色图
 
-
-
+```text
+用户选择资产“主角-林” → 生成 → 表单：宽/高/模型/参考图。
+Gen Agent 编译身份锁定（参考图 + 特征）+ 风格 → 提供商。
+结果卡片出现在资产详情；自动绑定到引用该资产的镜头。
+来源追溯面板。
 ```
-
-User selects Asset "主角-林" → Generate → form: width/height/model/refs.
-
-Gen Agent compiles identity lock (refs + traits) + style → provider.
-
-Result card appears in Asset detail; auto-bind to shots referencing asset.
-
-Provenance panel.
-
-```
-
-
 
 ### J3 分镜视频 + 宣传片
 
-
-
+```text
+用户："生成 shot 3 视频"
+  → 作业排队 → 进度 → 片段。
+用户："用高光 2,5,7 做一个30s 宣传片，赛博朋克电影感"
+  → Trailer Agent 挑选节拍 + 生成标题卡 + 拼接（ffmpeg）→ mp4。
+  → 在会话中 present() 文件。
 ```
-
-User: "生成 shot 3 视频"
-
-  → job queued → progress → clip.
-
-User: "用高光 2,5,7 做一个30s 宣传片，赛博朋克电影感"
-
-  → Trailer Agent picks beats + generates title cards + stitches (ffmpeg) → mp4.
-
-  → present() files in session.
-
-```
-
-
 
 ### J4 一致性检查
 
-
-
+```text
+用户："检查一致性"
+  → Consistency Agent 扫描镜头+资产；列出警告（只读）。
+  UI：每个镜头显示徽章。
 ```
-
-User: "检查一致性"
-
-  → Consistency Agent scans shots+assets; lists warnings (read-only).
-
-  UI badges per shot.
-
-```
-
-
 
 ### J5 分支/合并
 
-
-
+```text
+用户："fork 第4章尝试新结局"
+  → 深拷贝项目分支。
+  … 工作 …
+用户："合并回主线"
+  → 差异视图（章节 + 镜头）→ 选择变更块 → 应用。
 ```
-
-User: "fork 第4章尝试新结局"
-
-  → deep copy Project branch.
-
-  … work …
-
-User: "合并回主线"
-
-  → diff view (chapter + shots) → choose hunks → apply.
-
-```
-
-
 
 ## 4. 页面与布局
 
+### P1 项目主页（覆盖式侧板，720—960px 宽）
 
+区块：
 
-### P1 Project Home (Overlay Blade, 720-960px wide)
+- 头部：项目名、类型、一句话梗概、状态标签（章节/镜头/资产数量）
+- 快捷操作：新建章节、生成资产、一致性检查、导出。
+- 最近变更（来自插件存储日志的活动记录）。
+- 从上次离开处继续（最后打开的章节/镜头）。
 
+### P2 章节编辑器
 
+- 左侧：章节列表 + 节拍大纲（可折叠）
+- 中间：富文本编辑器（markdown + 块：对白、方向提示）
+- 右侧：一致性警告 + 提到的资产引用 + 字数
+- 底部：智能体建议面板（标签）
 
-Sections:
+### P3 镜头清单 / 故事板
 
-- Header: Project name, genre, logline, status chips (chapters/shots/assets counts)
+- 镜头网格或列表（有静帧时默认用静帧缩略图，否则占位图）
+- 每个镜头卡片：编号、时长、类型图标、描述摘要、对白预览、资产标签、生成状态徽章。
+- 详情抽屉（右侧）：完整描述、对白、镜头、转场、资产绑定、生成控制、变体。
+- 工具栏：排序（顺序）、按章节/类型/状态筛选、批量重新生成、导出 csv。
+- 拖拽重排镜头。
 
-- Quick actions: New chapter, Generate assets, Consistency check, Export.
+### P4 资产库
 
-- Recent changes (activity log from plugin storage journal).
+- 可筛选网格：角色/道具/地点/风格包。
+- 资产详情抽屉：参考图、特征、身份锁定提示词（可编辑）、使用情况（镜头）、版本、生成（图像）。
+- “查找复用”高亮：基于名称/描述的复用建议。
 
-- Continue where left off (last-opened chapter/shot).
+### P5 生成队列与结果
 
+- 活动作业，带进度/取消/重试。
+- 历史列表，带来源筛选与重新生成。
+- 媒体预览弹窗。
 
+### P6 预告片工作室
 
-### P2 Chapter Editor
-
-
-
-- Left: chapter list + beats outline (collapsible)
-
-- Center: rich text editor (markdown + blocks: dialogue, direction cues)
-
-- Right: consistency warnings + asset refs mentioned + word count
-
-- Bottom: agent suggestions panel (chips)
-
-
-
-### P3 Shot List / Storyboard
-
-
-
-- Grid or list of Shots (thumbnail default from still if exists, else placeholder)
-
-- Each shot card: number, duration, type icon, description snippet, dialogue preview, asset chips, gen status badge.
-
-- Detail drawer (right): full description, dialogue, camera, transition, asset bindings, generation controls, variants.
-
-- Toolbar: sort (order), filter by chapter/type/status, bulk regenerate, export csv.
-
-- Drag-reorder shots.
-
-
-
-### P4 Asset Library
-
-
-
-- Filterable grid: characters/props/locations/style packs.
-
-- Asset detail drawer: refs, traits, identity lock prompt (editable), usage (shots), versions, generate (image).
-
-- "Find reuse" highlight: reuse suggestions based on name/description.
-
-
-
-### P5 Generation Queue & Results
-
-
-
-- Active jobs with progress/cancel/retry.
-
-- History list with provenance filter & re-roll.
-
-- Media preview modal.
-
-
-
-### P6 Trailer Studio
-
-
-
-- Beat picker (drag reorder)
-
-- Style & duration presets
-
-- Title card editor
-
-- Music/SFX selection (placeholder)
-
-- Preview panel (mp4) + Export (present)
-
-
+- 节拍选择器（拖拽重排）
+- 风格与时长预设
+- 标题卡编辑器
+- 音乐/音效选择（占位）
+- 预览面板（mp4）+ 导出（present）
 
 ## 5. 交互模式 (Interaction patterns)
 
-
-
-- **Diff-first edits**: agents never overwrite silently; proposed changes (create/update/delete) are shown as diffs with Accept/Reject/Modify.
-
-- **Quick chips**: agent outputs 1-3 actionable chips; user taps.
-
-- **Inline edit**: any artifact field editable; saves immediately with undo.
-
-- **Empty states**: each panel has actionable empty state.
-
-- **Progressive disclosure**: advanced fields (camera lens, transition timing) in "Advanced" accordion.
-
-- **Error**: localized; generation failures show retry + logs.
-
-
+- **差异优先编辑（Diff-first edits）**：智能体绝不静默覆盖；提议的变更（创建/更新/删除）以差异形式展示，并提供接受/拒绝/修改。
+- **快捷标签（Quick chips）**：智能体输出 1—3 个可操作标签；用户点击。
+- **行内编辑（Inline edit）**：任何产物字段可编辑；立即保存并支持撤销。
+- **空状态（Empty states）**：每个面板都有可操作的空白状态。
+- **渐进式披露（Progressive disclosure）**：高级字段（镜头焦距、转场时长）放在“高级”折叠区。
+- **错误（Error）**：本地化；生成失败显示重试 + 日志。
 
 ## 6. 导航与状态
 
-
-
-- Project/Chapter/Shots state stored globally (plugin storage); UI reads via selectors. Session binding pointer stored per session (prefer global last-opened).
-
-- When session has no Project, Studio Panel = Project Picker + Create.
-
-- Deep link via command: `/story open <projectId>`.
-
-
+- 项目/章节/镜头状态全局存储（插件存储）；UI 通过选择器读取。会话绑定指针按会话存储（更倾向全局最后打开）。
+- 当会话没有项目时，工作室面板 = 项目选择器 + 创建。
+- 通过命令深链：`/story open <projectId>`。
 
 ## 7. 响应式与主题
 
-
-
-- DSH tokens (`--dsw-alias-*`) only; no literal colors except artwork.
-
-- Panels scroll internally; outer layout by DSH shell.
-
-- Dark/light tested side-by-side (per verification.md).
-
-
+- 仅使用 DSH token（`--dsw-alias-*`）；除艺术作品外不使用字面颜色。
+- 面板内部滚动；外部布局由 DSH shell 负责。
+- 深/浅色并排测试（按 verification.md）。
 
 ## 8. 可访问性
 
+- 为列表/按钮/对话框设置 ARIA 角色。
+- 键盘：Escape 关闭覆盖层；Tab 导航；标签可聚焦。
+- 减少动态效果：遵循 DSH 的减少动态效果设置。
 
+## 9. UX 决策：覆盖层 vs 主面板
 
-- ARIA roles for lists/buttons/dialogs.
+DSH 主视图是会话驱动（每个会话对应对话）。选项：
 
-- Keyboard: Escape closes overlays; Tab navigation; chips focusable.
+- A. 注册 `main` 槽位替换：激活时显示工作室，否则显示对话（风险：与宿主 `main` 冲突）。
+- B. 工作室面板使用 `shell.overlay`（更简单、侵入性更小；v1 推荐）。
+- C. 仅设置页（不够）。
 
-- Reduced motion: honor DSH reduced motion.
-
-
-
-## 9. UX 决策：Overlay vs Main panel
-
-
-
-DSH main view is session-driven (conversation per session). Options:
-
-
-
-- A. Register a `main` slot replacement that shows Studio when active and conversation otherwise (risk: conflicts with host `main`).
-
-- B. Use `shell.overlay` for Studio panel (simpler, less intrusive; recommended for v1).
-
-- C. Settings page only (not enough).
-
-
-
-**Recommendation (Phase 0 spike validates)**: Use `shell.overlay` for Studio panel (wide blade) + `sidebar.session` row action entry. If overlay not wide enough, fall back to a right-drawer. Validate DSH slot props.
+**建议（阶段 0 技术验证确认）**：工作室面板使用 `shell.overlay`（宽侧板）+ `sidebar.session` 行操作入口。如果覆盖层不够宽，回退到右侧抽屉。验证 DSH 槽位属性。

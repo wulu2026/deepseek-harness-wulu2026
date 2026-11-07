@@ -1,143 +1,86 @@
 # Capture — 决策记录 (ADR-lite)
 
-
-
 记录重大产品/技术决策。格式：编号-标题、状态、背景、决策、后果、日期。
-
-
 
 ---
 
-
-
 ## ADR-001 — 平台与形态：macOS DSH Bundle 插件
 
-- 状态：Accepted
-
+- 状态：已接受
 - 日期：2026-11-01
-
-- 决策：构建为 DSH 0.2.2-alpha.2 bundle，先 mac 桌面端，Host+Client 双半边。
-
-- 后果：不可 standalone; 必须借助 profile install; agents accessible.
-
-
+- 决策：构建为 DSH 0.2.2-alpha.2 bundle，先 mac 桌面端，Host + Client 双半边。
+- 后果：不可独立运行；必须借助 profile 安装；智能体可访问。
 
 ## ADR-002 — 对话优先（Dialogue-first）
 
-- 状态：Accepted
-
+- 状态：已接受
 - 决策：创作与编辑的主要入口是聊天；面板负责可视化/结构化编辑。
+- 后果：智能体工具是一等公民；UI 必须支持差异优先（diff-first）。
 
-- 后果：agent tools 是一等；UI 必须支持 diff-first.
+## ADR-003 — 全局项目存储（非会话派生）
 
-
-
-## ADR-003 — 全局项目存储（非 session-derived）
-
-- 状态：Accepted (pending S1 validation)
-
-- 背景：DSH 默认 state per session; 但 Project 应夸 session 可见.
-
-- 决策：Project 数据存 host storage（plugin-owned），session 仅存 Project pointer.
-
-- 风险：replay/undo 语义；journal 需设计。 accepted for MVP.
-
-
+- 状态：已接受（待 S1 验证）
+- 背景：DSH 默认状态按会话；但项目应跨会话可见。
+- 决策：项目数据存宿主存储（插件自有），会话仅存项目指针。
+- 风险：重放/撤销语义；日志需设计。MVP 阶段接受。
 
 ## ADR-004 — 资产为中心的一致性
 
-- 状态：Accepted
+- 状态：已接受
+- 决策：角色/道具/场景/风格是一等实体；生成时注入身份锁定（identity lock）。
+- 后果：阶段 1 强制资产增删改查 + 绑定。
 
-- 决策：角色/道具/场景/风格เป็น一等实体；生成时 inject identity lock.
+## ADR-005 — 不新增会话事件类型
 
-- 后果：Phase 1 强制 asset CRUD + binding.
-
-
-
-## ADR-005 — 不新增 session event 类型
-
-- 状态：Accepted
-
-- 决策：严格遵守 DSH practices #22；plugin 仅使用已有 events + plugin storage.
-
-- 后果：建议 edits via tool results + host records; no `plugin:` except if necessary.
-
-
+- 状态：已接受
+- 决策：严格遵守 DSH 实践 #22；插件仅使用已有事件 + 插件存储。
+- 后果：建议编辑通过工具结果 + 宿主记录；除必要外不使用 `plugin:`。
 
 ## ADR-006 — 渐进保真度（Progressive fidelity）
 
-- 状态：Accepted
+- 状态：已接受
+- 决策：文本 → 镜头 → 静帧 → 片段 → 预告片；每层独立可编辑/可重新生成。
 
-- 决策：text → shot → still → clip → trailer; each independently editable/regenerable.
+## ADR-007 — 生成以作业异步、可取消
 
+- 状态：已接受
+- 决策：所有生成走作业 + 进度；UI 不阻塞。
 
+## ADR-008 — 智能体差异优先编辑（Diff-first edits by agent）
 
-## ADR-007 — 生成以 Job 异步、可取消
+- 状态：已接受
+- 决策：智能体编辑以提案形式，用户接受/拒绝/修改；不静默覆盖。
+- 后果：提议/应用工具对（propose/apply tool pair）。
 
-- 状态：Accepted
+## ADR-009 — 原生 UI 组件（不导入 ui-primitives 模块）
 
-- 决策：所有 generation 走 jobs + progress; UI nonblocking.
+- 状态：已接受（按实践 #34）
+- 决策：客户端半边自写控件 + 主题 token；不 `require('@deepseek-ai/dsh-client-ui-primitives')`。
+- 后果：工作量更多，但安全。
 
+## ADR-010 — 数据文件路径待定（S1）
 
+- 状态：待定
+- 决策：最终位置待 S1；默认 `$DSH_HOME/capture/` 回退。
 
-## ADR-008 — Diff-first edits by agent
+## ADR-011 — 提供商抽象（MediaProvider）
 
-- 状态：Accepted
+- 状态：已接受
+- 决策：接口化；模拟/HTTP/本地提供商可插；不内嵌密钥。
 
-- 决策：agent edits 以 proposal 形式，用户 accept/reject/modify; 不 silent overwrite.
+## ADR-012 — 先覆盖式侧板，后主面板
 
-- 后果: propose/apply tool pair.
+- 状态：已接受（待 S2）
+- 决策：v1 中工作室作为 `shell.overlay` 宽侧板。
 
+## ADR-013 — ffmpeg 兜底合成预告片
 
-
-## ADR-009 — 原生 UI 组件（不 import ui-primitives module）
-
-- 状态：Accepted (per practices #34)
-
-- 决策: client half 自写 controls + theme tokens; 不 `require('@deepseek-ai/dsh-client-ui-primitives')`.
-
-- 后果: 更多工作，但安全。
-
-
-
-## ADR-010 — 数据文件路径 TBD (S1)
-
-- 状态：Pending
-
-- 决策：最终位置待 S1; 默认 `$DSH_HOME/capture/` fallback.
-
-
-
-## ADR-011 — 提供方抽象（MediaProvider）
-
-- 状态：Accepted
-
-- 决策: 接口化; mock/HTTP/本地 provider 可插; 不内嵌 key.
-
-
-
-## ADR-012 — 先 overlay blade，后 main panel
-
-- 状态：Accepted (pending S2)
-
-- 决策: Studio 作为 shell.overlay 宽 blade in v1.
-
-
-
-## ADR-013 — ffmpeg 兜底合成 trailer
-
-- 状态：Accepted
-
-- 决策: 最终 MP4 通过 ffmpeg concat/trim/transcode， provider 仅供 clips.
-
-
+- 状态：已接受
+- 决策：最终 MP4 通过 ffmpeg 拼接/裁剪/转码，提供商仅提供片段。
 
 ## ADR-014 — 命名包 `@local/capture`
 
-- 状态: Accepted (may rename before publish)
+- 状态：已接受（发布前可能改名）
+- 决策：本地开发与阶段 1 使用 @local 范围；发布时改为 registry 范围，可能 `@deepseek-ai`/作者范围。
 
-- 决策：本地开发与 phase 1 使用 @local scope；publish 时改 registry scope maybe `@deepseek-ai`/author's scope.
-
-
-
-更新：新增决策追加到此文件并更新 PROGRESS.md.
+更新：新增决策追加到此文件并更新 PROGRESS.md。

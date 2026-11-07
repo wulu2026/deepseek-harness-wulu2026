@@ -1,243 +1,133 @@
 # Capture — UI 设计 (03)
 
-
-
 ## 1. 设计哲学
 
+- **宿主外观**：与 DSH 设置/插件管理器一致：卡片式列表、圆角 8px、token 配色。
+- **媒体优先**：镜头/资产卡片突出显示缩略图；文本为次要信息。
+- **密度**：中等；信息丰富但不杂乱。
+- **通过徽章展示状态**：生成状态、一致性警告、资产使用情况。
 
+## 2. 布局网格（覆盖式侧板）
 
-- **	host look**: 与 DSH Settings/Plugin Manager 一致：卡片式列表、圆角 8px、token 配色.
-
-- **Media-first**: Shot/asset cards prominently display thumbnail; text secondary.
-
-- **Density**: medium; 信息-rich 但不 clutter.
-
-- **Status via badge**: gen status, consistency warnings, asset usage.
-
-
-
-## 2. Layout grid (overlay blade)
-
-
-
+```text
+┌ Studio Panel（覆盖式侧板，最大宽度 960px）────────────────────────┐
+│ [头部：项目选择器 + 标签页 + 操作]                                │
+├─ 左侧导航（220px）─┬─ 主内容（弹性） ─┬─ 右侧详情（320）          │
+│  项目               │                   │  （上下文相关）           │
+│  章节               │                   │                           │
+│  镜头               │                   │                           │
+│  资产               │                   │                           │
+│  生成               │                   │                           │
+│  预告片             │                   │                           │
+└────────────────────┴───────────────────┴───────────────────────────┘
 ```
 
-┌ Studio Panel (overlay, width 960px max) ─────────────────────────┐
+顶部标签用于横切：项目 / 章节 / 镜头清单 / 资产 / 生成队列 / 预告片；左侧导航显示所选标签内的子项。
 
-│ [Header: Project picker + tabs + actions]                        │
+## 3. 颜色 token
 
-├─ Left nav (220px) ─┬─ Main content (flex) ─┬─ Right detail (320) │
+仅使用 DSH 主题 token：
 
-│  Projects           │                       │  (contextual)     │
-
-│  Chapters           │                       │                   │
-
-│  Shots              │                       │                   │
-
-│  Assets             │                       │                   │
-
-│  Generations        │                       │                   │
-
-│  Trailers           │                       │                   │
-
-└────────────────────┴───────────────────────┴─────────────────────┘
-
-```
-
-
-
-Tabs at top for cross-cutting: Project / Chapter / ShotList / Assets / GenQueue / Trailers; left nav shows sub-items within selected tab.
-
-
-
-## 3. Color tokens
-
-
-
-Use DSH theme tokens only:
-
-- `--dsw-alias-bg-layer-default` (panel bg)
-
-- `--dsw-alias-bg-layer-raised` (cards)
-
-- `--dsw-alias-fg-default`, `--dsw-alias-fg-muted`
-
+- `--dsw-alias-bg-layer-default`（面板背景）
+- `--dsw-alias-bg-layer-raised`（卡片）
+- `--dsw-alias-fg-default`、`--dsw-alias-fg-muted`
 - `--dsw-alias-stroke-default`
-
 - `--dsw-alias-accent-default`
+- `--dsw-alias-warning-default`、`--dsw-alias-danger-default`、`--dsw-alias-success-default`
 
-- `--dsw-alias-warning-default`, `--dsw-alias-danger-default`, `--dsw-alias-success-default`
+艺术作品（图标/缩略图）可使用字面颜色。
 
+## 4. 排版
 
+- H1 18px/24；H2 16/22；正文 14/20；说明文字 12/16。
+- 字体：继承 DSH。
 
-Artwork (icons/thumbnails) may use literal colors.
+## 5. 组件（规格）
 
+### 5.1 ProjectCard（项目卡片）
 
+- 头部：名称（H2）+ 类型标签 + 数量。
+- 主体：一句话梗概（2 行）+ 最近活动。
+- 底部：打开、分叉、导出。
 
-## 4. Typography
+### 5.2 ChapterEditor（章节编辑器）
 
+- 标题输入（H2 样式）。
+- 正文 markdown 编辑器（工具栏：粗体/斜体/标题/列表/引用）。
+- 节拍侧栏：可重排列表、拖拽手柄。
+- 被引用的资产标签。
 
+### 5.3 ShotCard（镜头卡片，网格）
 
-- H1 18px/24; H2 16/22; body 14/20; caption 12/16.
+- 缩略图区域 16:9（无静帧时用类型图标占位）。
+- 编号徽章左上，时长右上。
+- 标题/描述 2 行。
+- 资产标签底部。
+- 生成状态点。
+- 悬停：播放预览（如果存在视频）。
 
-- Font: inherit from DSH.
+### 5.4 ShotDetailDrawer（镜头详情抽屉）
 
+- 字段：顺序、类型（选择）、时长（秒滑块）、描述（文本域）、对白（说话人 + 文本）、镜头（景别/角度/运动）、转场、音效/音乐。
+- 资产绑定：带添加/移除的标签。
+- 生成：生成静帧/视频；参数折叠区。
+- 变体：列表 + 差异。
 
+### 5.5 AssetCard（资产卡片）
 
-## 5. Components (specs)
+- 缩略图（方形）+ 名称 + 类型徽章 + 版本。
+- 使用次数标签。
 
+### 5.6 AssetDetail（资产详情）
 
+- 特征表单（取决于类型）。
+- 参考图（上传、重排、删除）。
+- 身份锁定提示词（可编辑，“重新生成锁定”按钮）。
+- 使用列表（镜头），可跳转。
+- 版本历史。
 
-### 5.1 ProjectCard
+### 5.7 GenerationJobRow（生成作业行）
 
-- Header: name (H2) + genre chip + count.
+- 类型图标 + 来源标签 + 进度条 + 取消/重试。
+- 输出预览缩略图。
 
-- Body: logline (2 lines) + last activity.
+### 5.8 TrailerTimeline（预告片时间线，简单）
 
-- Footer: Open, Fork, Export.
+- 节拍的水平标签及持续时间；总时长。
+- 风格选择器；标题卡编辑器。
+- 预览播放器（原生 `<video>`）。
+- 导出按钮。
 
+### 5.9 空状态
 
+- “尚无项目——用 `/story new` 创建或点击‘创建’”。
+- 所有列表遵循 DSH 空状态样式（图标 + 文本 + 主要操作）。
 
-### 5.2 ChapterEditor
+### 5.10 状态/徽章
 
-- Title input (H2 style).
+- 生成排队（灰色）/ 运行中（强调色旋转指示）/ 完成（成功）/ 失败（危险）/ 已取消（弱化）。
+- 一致性警告（警告点 + 工具提示）。
+- 资产复用次数。
 
-- Body markdown editor (toolbar: bold/italic/heading/list/quote).
+## 6. 图标与资源
 
-- Beats sidebar: reorderable list, drag handle.
+- 为插件提供原创简单 SVG 图标（复用？新设计；不得复制品牌图标）。在包根目录提供 `icon.svg`。
+- 镜头类型图标：最小 SVG 集（自定义，不依赖第三方）。
+- 除非作为生成媒体，否则不使用位图。
 
-- Assets referenced pills.
+## 7. 本地化
 
+- 使用区域设置 JSON（`locale/en.json`、`locale/zh.json`）存放所有 UI 文本，包括元标题/描述。
+- 使用 DSH `ctx.locale` 服务（客户端）。
 
+## 8. 动效
 
-### 5.3 ShotCard (grid)
+- 列表出现时使用 DSH AnimatedRows。
+- 不自定义布局观察器。
+- 遵循减少动态效果。
 
-- Thumbnail area 16:9 (placeholder with type icon if no still).
+## 9. 验证
 
-- Number badge top-left, duration top-right.
-
-- Title/description 2 lines.
-
-- Asset chips bottom.
-
-- Gen status dot.
-
-- Hover: play preview (if video exists).
-
-
-
-### 5.4 ShotDetailDrawer
-
-- Fields: Order, Type (select), Duration (slider sec), Description (textarea), Dialogue (speaker + text), Camera (shot size/angle/movement), Transition, SFX/music.
-
-- Asset bindings: chips with add/remove.
-
-- Generation: Generate still / video; params accordion.
-
-- Variants: list + diff.
-
-
-
-### 5.5 AssetCard
-
-- Thumbnail (square) + name + kind badge + version.
-
-- Usage count chip.
-
-
-
-### 5.6 AssetDetail
-
-- Traits form (depends on kind).
-
-- Reference images (upload, reorder, delete).
-
-- Identity lock prompt (editable, "Regenerate lock" button).
-
-- Usage list (shots) with jump.
-
-- Version history.
-
-
-
-### 5.7 GenerationJobRow
-
-- Kind icon + source label + progress bar + cancel/retry.
-
-- Output previews thumbnail.
-
-
-
-### 5.8 TrailerTimeline (simple)
-
-- Horizontal chips of beats with duration; total duration.
-
-- Style selector; title cards editor.
-
-- Preview player (native <video>).
-
-- Export button.
-
-
-
-### 5.9 Empty states
-
-- "No projects yet — create one with /story new or click Create".
-
-- All lists follow DSH empty-state style (icon + text + primary action).
-
-
-
-### 5.10 Status/badges
-
-- Gen queued (gray) / running (accent spinner) / done (success) / failed (danger) / cancelled (muted).
-
-- Consistency warning (warning dot + tooltip).
-
-- Asset reuse count.
-
-
-
-## 6. Icons & assets
-
-
-
-- Original simple SVG icon for plugin (reuse? invent new one; no copied branded). Provide `icon.svg` package root.
-
-- Shot type icons: minimal SVG set (custom, not dependency).
-
-- No raster unless as generated media.
-
-
-
-## 7. Localization
-
-
-
-- Locale JSON (`locale/en.json`, `locale/zh.json`) for all UI text incl. meta title/description.
-
-- Use DSH `ctx.locale` service (client).
-
-
-
-## 8. Motion
-
-
-
-- Use DSH AnimatedRows for lists where appears.
-
-- No custom layout observers.
-
-- Reduced motion respected.
-
-
-
-## 9. Validation
-
-
-
-- Light/dark screenshots side-by-side (when browser control available).
-
-- No literal colors except artwork.
-
-- Check slot rendering no crash.
+- 浅/深色截图并排（浏览器控制可用时）。
+- 除艺术作品外不使用字面颜色。
+- 检查槽位渲染不崩溃。

@@ -1,101 +1,57 @@
 # Capture — 里程碑 (06)
 
-
-
 ## 阶段
 
+### 阶段 0 — 技术验证与规格（1—2 周）
 
+- 完成 S1—S5
+- 通过 ADR 锁定存储、客户端—宿主数据流、媒体提供商、覆盖层 vs 主面板
+- 不编写生产代码；最多编写冒烟测试夹具。
 
-### Phase 0 — Spikes & Spec (1-2 周)
+### 阶段 1 — MVP-A 文本与分镜（4—6 周）
 
-- S1-S5 完成
+- 宿主存储 + 实体 + 工具
+- 客户端工作室面板（项目/章节/镜头/资产/导出）
+- 智能体：Story Manager、Outline、Shot Director、Asset Manager、Consistency（只读）、Exporter
+- 宿主冒烟 + 客户端冒烟 + 兼容性检查
+- **退出标准**：E1—E6
 
-- ADR 锁定存储、客户端-宿主数据流、媒体提供方、overlay vs main
+### 阶段 2 — MVP-B 图像生成（3—4 周）
 
-- 不写 production code; 最多 smoke fixtures.
+- 提供商抽象 + HTTP + 模拟；生成作业
+- 身份锁定；角色/镜头静帧生成；来源追溯
+- 生成队列 UI
+- **退出标准**：E7—E8
 
+### 阶段 3 — MVP-C 视频与宣传片（4—5 周）
 
+- 镜头视频生成；预告片编译（ffmpeg）；标题卡
+- 竖版裁剪；`present()` 交付物
+- **退出标准**：E9
 
-### Phase 1 — MVP-A 文本 & 分镜 (4-6 周)
+### 阶段 4 — 打磨与公开（4—6 周）
 
-- Host storage + entities + tools
-
-- Client Studio panel (project/chapter/shot/asset/export)
-
-- Agents: Story Manager, Outline, Shot Director, Asset Manager, Consistency (read-only), Exporter
-
-- Host smoke + client smoke + compat-check
-
-- **Exit**: E1-E6
-
-
-
-### Phase 2 — MVP-B 图像生成 (3-4 周)
-
-- Provider abstraction + HTTP + mock; gen jobs
-
-- Identity lock; character/shot still gen; provenance
-
-- Gen queue UI
-
-- **Exit**: E7-E8
-
-
-
-### Phase 3 — MVP-C 视频 & 宣传片 (4-5 周)
-
-- shot video gen; trailer compile (ffmpeg); title cards
-
-- vertical crop; present() deliverables
-
-- **Exit**: E9
-
-
-
-### Phase 4 — Polish & Public (4-6 周)
-
-- multi-provider cost/queue; branch compare UI; timeline (maybe)
-
-- templates; market packaging; docs; e2e/browser acceptance
-
-- **Exit**: v1.0.0 publish-ready
-
-
+- 多提供商成本/队列；分支对比 UI；时间线（可能）
+- 模板；市场打包；文档；端到端/浏览器验收
+- **退出标准**：v1.0.0 可发布
 
 ## 版本
 
-
-
-- v0.1.0 (end Phase 1) — internal test
-
-- v0.2.0 (end Phase 2) — beta image
-
-- v0.3.0 (end Phase 3) — beta video
-
-- v1.0.0 (end Phase 4) — public
-
-
+- v0.1.0（阶段 1 结束）— 内部测试
+- v0.2.0（阶段 2 结束）— 图像 beta
+- v0.3.0（阶段 3 结束）— 视频 beta
+- v1.0.0（阶段 4 结束）— 公开
 
 ## 风险/依赖表
 
-
-
-| dep | risk | owner |
-
+| 依赖 | 风险 | 负责方 |
 |---|---|---|
+| DSH 存储 API 不明确 | 阻塞阶段 1 | 技术验证 S1 |
+| 图像生成可用性/成本 | 阻塞阶段 2 | 技术验证 S5 |
+| 客户端—宿主数据流 | 阻塞所有 UI | 技术验证 S2 |
+| 智能体预设注册 | 智能体能力减弱 | 技术验证 S3/S8 |
 
-| DSH storage API unclear | block Phase 1 | Spike S1 |
+## 每个阶段的就绪/完成定义
 
-| image gen availability/cost | block Phase 2 | Spike S5 |
-
-| client-host data flow | block all UI | Spike S2 |
-
-| agent preset registration | weaker agents | Spike S3/S8 |
-
-
-
-## Definition of Ready/Done per phase
-
-- Phase entry: all blocking spikes from previous phase done + ADRs merged.
-
-- Phase exit: acceptance E-list + tests green + progress doc updated.
+- 阶段进入：上一阶段所有阻塞性技术验证完成 + ADR 已合并。
+- 阶段退出：验收 E 列表 + 测试通过 + 进度文档已更新。
