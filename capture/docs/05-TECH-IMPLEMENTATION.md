@@ -302,3 +302,84 @@ capture.export { projectId, format } -> 文件引用
 ## 17. 此处提出的开放问题 → 见 08
 
 Q1（存储官方位置）、Q2（DeepSeek 图像生成可用性）等。
+
+---
+
+## 18. Phase 1 exact DSH API bindings (spec freeze update)
+
+### 18.1 Host plugin services to declare
+
+```js
+export const inject = ["storage", "storageDomain", "webServer", "tools"];
+
+export function apply(ctx, config) {
+  // all registrations belong to ctx.effect...
+}
+```
+
+### 18.2 Storage & domain
+
+```js
+import { defineDomain, domainTable } from "@deepseek-ai/dsh-storage-domain";
+import { z } from "zod";
+
+const CaptureSpec = defineDomain({
+  name: "capture",
+  version: 1,
+  tables: {
+    projects: domainTable(projectSchema),
+    chapters: domainTable(chapterSchema),
+    shots: domainTable(shotSchema),
+    assets: domainTable(assetSchema),
+    generations: domainTable(generationSchema),
+    trailers: domainTable(trailerSchema),
+  },
+});
+
+const memory = await ctx.storageDomain.open(CaptureSpec);
+```
+
+### 18.3 Host tools (register via `ctx.tools.register(defineTool(...))`)
+
+Prefix: `capture.*`
+
+- `capture.project.create` params `{ name, genre?, logline? }`
+- `capture.project.list` params `{}`
+- `capture.project.get` params `{ projectId }`
+- `capture.chapter.create` params `{ projectId, title?, index? }`
+- `capture.chapter.update` params `{ projectId, chapterId, patch }`
+- `capture.shotlist.generate` params `{ projectId, chapterId, targetDurationSec? }`
+- `capture.shot.update` params `{ projectId, shotId, patch }`
+- `capture.asset.create` params `{ projectId, kind, name, description, traits? }`
+- `capture.asset.bind` params `{ projectId, assetId, shotId, role }`
+- `capture.generation.request` params `{ kind, sourceShotId?, assetId?, params }` (Phase 2 mock)
+- `capture.trailer.create` params `{ projectId, beatShotIds[], style, durationTargetSec? }` (Phase 3)
+- `capture.export` params `{ projectId, format: "md" | "csv" }` (Phase 1 text only)
+
+Each tool returns a plain JSON result envelope shaped like `{ ok: boolean, ... }`; invalid IDs reject (`INVALID_PROJECT_ID`, `PROJECT_NOT_FOUND`) before execution.
+
+### 18.4 Web routes (Phase 1 uses `ctx.webServer.register({ kind: "exact", ... })`)
+
+All routes use the dsh-archived trust-report pattern (`loopback + Origin/Sec-Fetch-Site`).
+
+<|message|> Method | Path | Contract |
+|---|---|---|
+| GET | `/api/capture/state` | `{ ok, projects:[{id,name,counts}], currentProjectId? }` |
+| POST | `/api/capture/projects` | body `{ name, genre?, logline? }` |
+| GET | `/api/capture/projects/:id` | `{ ok, project }` |
+| POST | `/api/capture/chapters` | body `{ projectId, title?, index? }` |
+| POST | `/api/capture/assets` | body `{ projectId, kind, name, description, traits? }` |
+| POST | `/api/capture/exports` | body `{ projectId, format }` → `{ ok, url? }` (files only after export) |
+
+### 18.5 Client state access (no Typert Phase 1/2)
+Client uses same-origin `fetch` with `credentials: "same-origin"`. Every mutation calls the POST route and refreshes `stateOf(ctx)` server-side. Long waits are poll-only (`GET /api/capture/generations/:id`) with 1–2 second intervals.
+
+### 18.6 Phase 1 host tasks checklist
+- [ ] open domain
+- [ ] define zod schemas
+- [ ] implement atomic writes via domain (not manual FS)
+- [ ] route trust gate + method gate + uniform JSON
+- [ ] minimally 8 tool wrappers
+- [ ] `ctx.systemPrompt.section("capture", ...)` to educate agents
+- [ ] `tools-guard` deny invalid scope if necessary
+- [ ] `ctx.log` scoped `capture`
