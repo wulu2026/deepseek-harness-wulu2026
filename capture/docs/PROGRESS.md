@@ -7,6 +7,7 @@
 1. **项目**：DSH bundle 插件，面向作家/编剧；对话优先创作（小说→分镜→图→视频→宣传片）。
 2. **当前阶段**：阶段 0 设计文档已完成 + S1 已验证；S2 进行中。代码**尚未开始**；下一步完成技术验证 S2—S5 后开始阶段 1。
 3. **恢复指令**：读本文件 §2 → §3 → 执行 §4 中第一个待处理任务；任何新增约定写入 ADR §7-DECISIONS.md 并更新此文档。
+4. **协作约定**：先 review，再 commit；用户未明确确认前禁止 commit/push；开发前更新 `capture/docs/04-TECH-ARCHITECTURE.md` / `capture/docs/05-TECH-IMPLEMENTATION.md` / `capture/docs/07-DECISIONS.md`。
 
 ---
 
