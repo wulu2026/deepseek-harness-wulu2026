@@ -157,3 +157,15 @@ capture/
 
 
 **"把碎片灵感 → 可读的故事 → 可拍的分镜 → 可看的视频"，并让 AI/agent 帮忙填满每一步。"**
+
+## 开发与贡献
+
+开发团队与后续 agent 必须遵循：
+
+- `AGENTS.md`：Capture 项目级执行规则
+- `CONTRIBUTING.md`：贡献流程与 whitespace / commit / branch 规则
+
+特别约定：
+- 先 review，再 commit；禁止用户确认前直接 commit。
+- spec 先行：Phase 1 前先更新 architecture / implementation docs 与 ADR。
+- 不在用户确认前 push。
