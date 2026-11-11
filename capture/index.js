@@ -139,11 +139,12 @@ export async function apply(ctx, config) {
   const domainPromise = Promise.resolve(domain);
 
   if (typeof ctx.systemPrompt?.section === "function") {
-    ctx.systemPrompt.section({
+    const disposeSection = ctx.systemPrompt.section({
       name: "capture",
       order: 100,
       text: "Capture is a story/shoot/trailer creation workspace. Use capture_project_create/list, then chapters, shots, assets and exports. Never modify a project without the user's instruction.",
     });
+    ctx.effect(disposeSection, "capture:system-prompt-section");
   }
 
   const registerTool = (definition) => {
