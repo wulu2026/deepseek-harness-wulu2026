@@ -33,7 +33,9 @@
 - [x] ADR（`capture/docs/07-DECISIONS.md`）
 - [x] 开放问题（`capture/docs/08-OPEN-QUESTIONS.md`）
 - [x] 技术验证 S1 存储（通过 `capture/docs/spikes/S1-storage.md` 验证；Q1 已解）
-- [~] 技术验证 S2 客户端—宿主（进行中，见 `capture/docs/spikes/S2-client-host.md`；Q3 待解）
+- [x] 工具命名规范：所有 `capture.xxx.yyy` 改为 `capture_xxx_yyy`（snake_case），符合 DSH `defineTool` 校验（a-z/A-Z/0-9/underscore/dash）
+- [x] 客户端引入 `safeJson` 防护：对非 JSON 响应返回 `{ ok: false, error: "HTTP_XXX", ... }`，避免 `res.json()` 解析纯文本崩溃
+- [x] 技术验证 S2 客户端—宿主（进行中，见 `capture/docs/spikes/S2-client-host.md`；Q3 待解）
 - [x] 目录与约定（README）
 
 ## 3. 当前状态 / 最近决策

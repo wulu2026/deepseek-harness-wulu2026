@@ -5,13 +5,27 @@ window.__ModuleLoader__.load({
     const React = require("react");
     const h = React.createElement; // explicit element factory (no JSX step)
 
+    // Safe JSON parsing for fetch responses. Returns { ok, error?, message? } envelope.
+    async function safeJson(response) {
+      const contentType = response.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        const text = await response.text();
+        return { ok: false, error: `HTTP_${response.status}`, message: text.slice(0, 200) };
+      }
+      try {
+        return await response.json();
+      } catch (e) {
+        return { ok: false, error: "INVALID_JSON", message: String(e?.message ?? e) };
+      }
+    }
+
     function CapturePanel() {
       const [state, setState] = React.useState({ projects: [], error: null, loading: true });
 
       React.useEffect(function () {
         let active = true;
         fetch("/api/capture/state", { credentials: "same-origin" })
-          .then((res) => res.json())
+          .then((res) => safeJson(res))
           .then((result) => {
             if (!active) return;
             if (result?.ok) {

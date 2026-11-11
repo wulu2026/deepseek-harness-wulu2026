@@ -245,21 +245,21 @@ export class MediaProvider {
 示例：
 
 ```text
-capture.project.create { name, genre?, logline? }
-capture.project.list {}
-capture.project.get { projectId }
-capture.chapter.create { projectId, title, index? }
-capture.chapter.update { projectId, chapterId, patch }
-capture.shotlist.generate { projectId, chapterId, targetDurationSec? }
-capture.shot.update { projectId, shotId, patch }
-capture.asset.create { projectId, kind, name, description, traits? }
-capture.asset.bind { projectId, assetId, shotId, role }
-capture.generation.request { kind, sourceShotId?, assetId?, params }
-capture.trailer.create { projectId, beatShotIds[], style, durationTargetSec }
-capture.export { projectId, format } -> 文件引用
+capture_project.create { name, genre?, logline? }
+capture_project.list {}
+capture_project.get { projectId }
+capture_chapter.create { projectId, title, index? }
+capture_chapter.update { projectId, chapterId, patch }
+capture_shotlist.generate { projectId, chapterId, targetDurationSec? }
+capture_shot.update { projectId, shotId, patch }
+capture_asset.create { projectId, kind, name, description, traits? }
+capture_asset.bind { projectId, assetId, shotId, role }
+capture_generation.request { kind, sourceShotId?, assetId?, params }
+capture_trailer.create { projectId, beatShotIds[], style, durationTargetSec }
+capture_export { projectId, format } -> 文件引用
 ```
 
-差异优先的智能体工作流：对于智能体提议的编辑，使用工具 `capture.proposeChange` 创建“待处理提案”，返回 proposalId；UI 渲染差异；`capture.applyProposal(proposalId)` 持久化。这防止盲目覆盖。
+差异优先的智能体工作流：对于智能体提议的编辑，使用工具 `capture_propose_change` 创建“待处理提案”，返回 proposalId；UI 渲染差异；`capture_apply_proposal(proposalId)` 持久化。这防止盲目覆盖。
 
 ## 13. 测试（宿主冒烟计划）
 
@@ -343,18 +343,18 @@ const memory = await ctx.storageDomain.open(CaptureSpec);
 
 Prefix: `capture.*`
 
-- `capture.project.create` params `{ name, genre?, logline? }`
-- `capture.project.list` params `{}`
-- `capture.project.get` params `{ projectId }`
-- `capture.chapter.create` params `{ projectId, title?, index? }`
-- `capture.chapter.update` params `{ projectId, chapterId, patch }`
-- `capture.shotlist.generate` params `{ projectId, chapterId, targetDurationSec? }`
-- `capture.shot.update` params `{ projectId, shotId, patch }`
-- `capture.asset.create` params `{ projectId, kind, name, description, traits? }`
-- `capture.asset.bind` params `{ projectId, assetId, shotId, role }`
-- `capture.generation.request` params `{ kind, sourceShotId?, assetId?, params }` (Phase 2 mock)
-- `capture.trailer.create` params `{ projectId, beatShotIds[], style, durationTargetSec? }` (Phase 3)
-- `capture.export` params `{ projectId, format: "md" | "csv" }` (Phase 1 text only)
+- `capture_project.create` params `{ name, genre?, logline? }`
+- `capture_project.list` params `{}`
+- `capture_project.get` params `{ projectId }`
+- `capture_chapter.create` params `{ projectId, title?, index? }`
+- `capture_chapter.update` params `{ projectId, chapterId, patch }`
+- `capture_shotlist.generate` params `{ projectId, chapterId, targetDurationSec? }`
+- `capture_shot.update` params `{ projectId, shotId, patch }`
+- `capture_asset.create` params `{ projectId, kind, name, description, traits? }`
+- `capture_asset.bind` params `{ projectId, assetId, shotId, role }`
+- `capture_generation.request` params `{ kind, sourceShotId?, assetId?, params }` (Phase 2 mock)
+- `capture_trailer.create` params `{ projectId, beatShotIds[], style, durationTargetSec? }` (Phase 3)
+- `capture_export` params `{ projectId, format: "md" | "csv" }` (Phase 1 text only)
 
 Each tool returns a plain JSON result envelope shaped like `{ ok: boolean, ... }`; invalid IDs reject (`INVALID_PROJECT_ID`, `PROJECT_NOT_FOUND`) before execution.
 

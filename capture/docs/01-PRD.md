@@ -206,7 +206,7 @@ interface MediaProvider {
 阶段 1：
 
 - E1：`/story new "X"` + `/story chapter add` + `/story shotlist generate` 生成项目 + 章节 + 5 个镜头；显示在工作室面板。
-- E2：智能体可通过 `capture.shot.update` 编辑镜头对白；显示差异。
+- E2：智能体可通过 `capture_shot.update` 编辑镜头对白；显示差异。
 - E3：创建资产 + 绑定到镜头；一致性警告可见。
 - E4：分叉章节 → 2 个分支；选择胜出恢复。
 - E5：导出 screenplay.md + shotlist.csv。
