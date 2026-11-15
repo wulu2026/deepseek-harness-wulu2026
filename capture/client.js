@@ -150,16 +150,15 @@ window.__ModuleLoader__.load({
             position: "fixed",
             top: 0,
             left: 0,
-            right: 0,
-            bottom: 0,
+            height: "100vh",
+            width: "360px",
             zIndex: 2000,
             display: "flex",
             flexDirection: "column",
             background: "var(--dsw-alias-bg-surface, #fff)",
-            border: "1px solid var(--dsw-alias-stroke-default, #ccc)",
-            borderRadius: "8px",
-            margin: "24px",
-            boxShadow: "0 4px 24px rgba(0,0,0,0.15)",
+            borderRight:
+              "1px solid var(--dsw-alias-stroke-default, #ccc)",
+            boxShadow: "2px 0 12px rgba(0,0,0,0.1)",
           },
         },
         [
@@ -344,16 +343,18 @@ window.__ModuleLoader__.load({
         {
           style: {
             display: "flex",
+            flexDirection: "column",
             alignItems: "center",
-            gap: 8,
-            padding: "6px 10px",
+            justifyContent: "center",
+            gap: 4,
+            padding: "10px 8px",
             cursor: "pointer",
-            borderRadius: "6px",
+            borderRadius: "8px",
             background: open
               ? "var(--dsw-alias-accent-bg-muted, #eef4fb)"
               : "transparent",
             color: "var(--dsw-alias-fg-default, #111)",
-            fontSize: 13,
+            fontSize: 12,
           },
           onClick: () => {
             OVERLAY_STATE.open = !OVERLAY_STATE.open;
@@ -379,13 +380,13 @@ window.__ModuleLoader__.load({
           ),
         );
 
-        ctx.slots.inject("sidebar.workspaces.session.menu.item", () =>
+        ctx.slots.inject("sidebar.panellist", () =>
           ctx.slots.register(
             {
-              name: "capture.open",
+              name: "sidebar.panellist",
               id: "capture.open",
               order: 450,
-              label: "打开 Capture",
+              label: "Capture",
             },
             MenuEntry,
           ),
@@ -394,7 +395,7 @@ window.__ModuleLoader__.load({
         ctx.slots.inject("shell.overlay", () =>
           ctx.slots.register(
             {
-              name: "capture.overlay",
+              name: "shell.overlay",
               id: "capture.overlay",
               order: 50,
             },
