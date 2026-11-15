@@ -149,16 +149,16 @@ window.__ModuleLoader__.load({
           style: {
             position: "fixed",
             top: 0,
-            left: 0,
+            right: 0,
             height: "100vh",
             width: "360px",
             zIndex: 2000,
             display: "flex",
             flexDirection: "column",
             background: "var(--dsw-alias-bg-surface, #fff)",
-            borderRight:
+            borderLeft:
               "1px solid var(--dsw-alias-stroke-default, #ccc)",
-            boxShadow: "2px 0 12px rgba(0,0,0,0.1)",
+            boxShadow: "-2px 0 12px rgba(0,0,0,0.1)",
           },
         },
         [
