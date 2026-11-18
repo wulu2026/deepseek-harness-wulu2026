@@ -6,9 +6,9 @@ window.__ModuleLoader__.load({
     const h = React.createElement; // explicit element factory (no JSX step)
     const { useState, useEffect, useCallback } = React;
 
-    // Shared overlay toggle state across sidebar menu entry and overlay panel.
-    const OVERLAY_STATE = window.__captureOverlayState || { open: false };
-    if (!window.__captureOverlayState) window.__captureOverlayState = OVERLAY_STATE;
+    // Shared studio toggle state across sidebar menu entry and right sidebar page.
+    const STUDIO_STATE = window.__captureStudioState || { open: false };
+    if (!window.__captureStudioState) window.__captureStudioState = STUDIO_STATE;
 
     // Safe JSON parsing for fetch responses. Returns { ok, error?, message? } envelope.
     async function safeJson(response) {
@@ -75,7 +75,7 @@ window.__ModuleLoader__.load({
         projects: [],
         error: null,
         loading: true,
-        open: OVERLAY_STATE.open,
+        open: STUDIO_STATE.open,
       });
       const [newName, setNewName] = useState("");
 
@@ -108,11 +108,11 @@ window.__ModuleLoader__.load({
       }, []);
 
       useEffect(() => {
-        setState((s) => ({ ...s, open: OVERLAY_STATE.open }));
-        if (OVERLAY_STATE.open) fetchProjects();
+        setState((s) => ({ ...s, open: STUDIO_STATE.open }));
+        if (STUDIO_STATE.open) fetchProjects();
         const handler = () => {
-          setState((s) => ({ ...s, open: OVERLAY_STATE.open }));
-          if (OVERLAY_STATE.open) fetchProjects();
+          setState((s) => ({ ...s, open: STUDIO_STATE.open }));
+          if (STUDIO_STATE.open) fetchProjects();
         };
         window.addEventListener("capture:overlay-toggle", handler);
         return () => window.removeEventListener("capture:overlay-toggle", handler);
@@ -199,7 +199,7 @@ window.__ModuleLoader__.load({
                     fontSize: 20,
                   },
                   onClick: () => {
-                    OVERLAY_STATE.open = false;
+                    STUDIO_STATE.open = false;
                     window.dispatchEvent(new CustomEvent("capture:overlay-toggle"));
                   },
                 },
@@ -330,10 +330,10 @@ window.__ModuleLoader__.load({
 
     // ---- Sidebar menu entry (sidebar.workspaces.session.menu.item) ----
     function MenuEntry() {
-      const [open, setOpen] = useState(OVERLAY_STATE.open);
+      const [open, setOpen] = useState(STUDIO_STATE.open);
       useEffect(() => {
-        setOpen(OVERLAY_STATE.open);
-        const handler = () => setOpen(OVERLAY_STATE.open);
+        setOpen(STUDIO_STATE.open);
+        const handler = () => setOpen(STUDIO_STATE.open);
         window.addEventListener("capture:overlay-toggle", handler);
         return () => window.removeEventListener("capture:overlay-toggle", handler);
       }, []);
@@ -357,7 +357,7 @@ window.__ModuleLoader__.load({
             fontSize: 12,
           },
           onClick: () => {
-            OVERLAY_STATE.open = !OVERLAY_STATE.open;
+            STUDIO_STATE.open = !STUDIO_STATE.open;
             window.dispatchEvent(new CustomEvent("capture:overlay-toggle"));
           },
         },
@@ -392,12 +392,11 @@ window.__ModuleLoader__.load({
           ),
         );
 
-        ctx.slots.inject("shell.overlay", () =>
+        ctx.slots.inject("sidebar.right.pane.tab", () =>
           ctx.slots.register(
             {
-              name: "shell.overlay",
-              id: "capture.overlay",
-              order: 50,
+              name: "sidebar.right.pane.tab",
+              key: "capture",
             },
             StudioPanel,
           ),
