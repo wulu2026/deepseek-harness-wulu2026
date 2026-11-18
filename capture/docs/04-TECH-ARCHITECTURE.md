@@ -199,19 +199,6 @@ Capture 是 DeepSeek Harness (DSH) 的一个 **bundle 插件**，面向作家/�
 
 ---
 
-## 9. 已知问题与修复记录（阶段 1）
-
-| ID | 问题 | 影响 | 修复 | 提交 |
-|---|---|---|---|---|
-| P0 | `ctx.systemPrompt.section()` 返回的 disposer 未被 `ctx.effect` 托管 | 插件重载/HMR 时重复注册 `"capture"` 章节，抛 `already registered`，整个 Host 激活崩溃 | 通过 `ctx.effect(disposeSection, "capture:system-prompt-section")` 托管，卸载时逆序注销 | `12a685e49a` |
-| P1-a | 工具使用 `zod` + `@deepseek-ai/dsh-storage-domain` 作为插件包依赖 | 插件包不可将 DSH 内部 bundle 与 `zod` 声明为 pnpm 依赖，加载会失败 | 内联 `defineDomain`/`domainTable`，使用 passthrough schema，工具名改为 snake_case 直接 `ctx.tools.register` | `c1e7dee24d` |
-| P1-b | 工具名使用点分式 `capture.project.create` | 不符合 DSH 工具名校验（a-z/A-Z/0-9/underscore/dash） | 改为 `capture_project_create`、`capture_project_list` | `c1e7dee24d` |
-| P1-c | 客户端 `res.json()` 直接解析响应 | 非 JSON 响应（纯文本错误页）会抛未捕获异常，客户端崩溃 | 引入 `safeJson`，对非 JSON 返回 `{ ok: false, error: "HTTP_<status>", message }` | `c1e7dee24d` |
-
-阶段 1 遗留风险（非阻塞）：desktop 平台下 `dsh.client.platform: "web"` 的客户端加载匹配、客户端模块加载时机（已在真实 Web GUI 上验证通过，面板正常渲染）。
-
----
-
 ## 10. 扩展点预留
 
 - 槽位：`sidebar.workspaces.session.menu.item`、`shell.overlay`（已注册框架，宽侧板布局待阶段 2 确认）、`settings.general.item`、`conversation.input.dock`。
