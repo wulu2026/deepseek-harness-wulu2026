@@ -101,7 +101,7 @@
 - [x] 宿主冒烟：项目/章节/镜头/资产增删改查 + 重启后持久化（项目 CRUD 待实现，现仅项目列表）
 - [x] 工具列表包含 `capture.*`（`capture_project_create`、`capture_project_list` 已验证）
 - [ ] 设置通用项显示 Capture 区（客户端尚未注册 `settings.general.item`）
-- [ ] 覆盖层打开并列出项目（客户端尚未注册 `shell.overlay`）
+- [x] 覆盖层打开并列出项目（客户端已注册 `shell.overlay`，`id: capture.overlay`；StudioPanel 渲染项目列表，Web GUI 面板正常）
 - [ ] 导出 md/csv 生成文件（阶段 1+）
 - [x] 兼容性检查通过（服务名/路由名均与 app.asar 实现一致）
 - [x] 客户端冒烟通过（composer dock 渲染 "Capture 0 project(s)"，fetch `/api/capture/state` 成功）
