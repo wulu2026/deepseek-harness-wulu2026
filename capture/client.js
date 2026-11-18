@@ -6,10 +6,6 @@ window.__ModuleLoader__.load({
     const h = React.createElement; // explicit element factory (no JSX step)
     const { useState, useEffect, useCallback } = React;
 
-    // Shared studio toggle state across sidebar menu entry and right sidebar page.
-    const STUDIO_STATE = window.__captureStudioState || { open: false };
-    if (!window.__captureStudioState) window.__captureStudioState = STUDIO_STATE;
-
     // Safe JSON parsing for fetch responses. Returns { ok, error?, message? } envelope.
     async function safeJson(response) {
       const contentType = response.headers.get("content-type") || "";
@@ -69,13 +65,16 @@ window.__ModuleLoader__.load({
       );
     }
 
-    // ---- StudioPanel (shell.overlay workspace) ----
+    // ---- StudioPanel (right sidebar workspace page) ----
+    //
+    // Mounted inside DSH's native right sidebar via sidebar.right.pane.tab slot.
+    // Layout (width, height, scroll) is owned by the sidebar shell; this component
+    // only renders its content area. No position:fixed / width / right styles here.
     function StudioPanel() {
       const [state, setState] = useState({
         projects: [],
         error: null,
         loading: true,
-        open: STUDIO_STATE.open,
       });
       const [newName, setNewName] = useState("");
 
@@ -108,14 +107,7 @@ window.__ModuleLoader__.load({
       }, []);
 
       useEffect(() => {
-        setState((s) => ({ ...s, open: STUDIO_STATE.open }));
-        if (STUDIO_STATE.open) fetchProjects();
-        const handler = () => {
-          setState((s) => ({ ...s, open: STUDIO_STATE.open }));
-          if (STUDIO_STATE.open) fetchProjects();
-        };
-        window.addEventListener("capture:overlay-toggle", handler);
-        return () => window.removeEventListener("capture:overlay-toggle", handler);
+        fetchProjects();
       }, []);
 
       const handleCreate = async (e) => {
@@ -141,24 +133,16 @@ window.__ModuleLoader__.load({
         }
       };
 
-      if (!state.open) return null;
-
       return h(
         "div",
         {
           style: {
-            position: "fixed",
-            top: 0,
-            right: 0,
-            height: "100vh",
-            width: "360px",
-            zIndex: 2000,
+            height: "100%",
+            overflowY: "auto",
             display: "flex",
             flexDirection: "column",
+            padding: "16px",
             background: "var(--dsw-alias-bg-surface, #fff)",
-            borderLeft:
-              "1px solid var(--dsw-alias-stroke-default, #ccc)",
-            boxShadow: "-2px 0 12px rgba(0,0,0,0.1)",
           },
         },
         [
@@ -170,7 +154,7 @@ window.__ModuleLoader__.load({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                padding: "12px 16px",
+                padding: "0 0 16px 0",
                 borderBottom:
                   "1px solid var(--dsw-alias-stroke-muted, #e5e5e5)",
               },
@@ -187,30 +171,12 @@ window.__ModuleLoader__.load({
                 },
                 "Capture 工作室",
               ),
-              h(
-                "button",
-                {
-                  style: {
-                    background: "transparent",
-                    border: "none",
-                    color: "var(--dsw-alias-fg-subtle, #666)",
-                    cursor: "pointer",
-                    padding: 4,
-                    fontSize: 20,
-                  },
-                  onClick: () => {
-                    STUDIO_STATE.open = false;
-                    window.dispatchEvent(new CustomEvent("capture:overlay-toggle"));
-                  },
-                },
-                "×",
-              ),
             ],
           ),
           // Body
           h(
             "div",
-            { style: { padding: "16px", overflowY: "auto", flex: 1 } },
+            { style: { flex: 1 } },
             [
               state.loading
                 ? h("div", null, "加载中…")
@@ -328,15 +294,22 @@ window.__ModuleLoader__.load({
       );
     }
 
-    // ---- Sidebar menu entry (sidebar.workspaces.session.menu.item) ----
+    // ---- Sidebar menu entry (sidebar.panellist) ----
+    //
+    // Clicking this entry opens the Capture Studio Tab in the native right
+    // sidebar via sidebarRight.openTab("capture"). All service access is
+    // defensively guarded so the plugin does not crash if a service is not
+    // available in the current profile.
     function MenuEntry() {
-      const [open, setOpen] = useState(STUDIO_STATE.open);
-      useEffect(() => {
-        setOpen(STUDIO_STATE.open);
-        const handler = () => setOpen(STUDIO_STATE.open);
-        window.addEventListener("capture:overlay-toggle", handler);
-        return () => window.removeEventListener("capture:overlay-toggle", handler);
-      }, []);
+      const handleOpen = () => {
+        const sidebarRight =
+          typeof ctx.get === "function" ? ctx.get("sidebarRight") : undefined;
+        if (sidebarRight && typeof sidebarRight.openTab === "function") {
+          sidebarRight.openTab("capture");
+        } else {
+          console.warn("[capture] sidebarRight service or openTab method not available");
+        }
+      };
 
       return h(
         "div",
@@ -350,16 +323,10 @@ window.__ModuleLoader__.load({
             padding: "10px 8px",
             cursor: "pointer",
             borderRadius: "8px",
-            background: open
-              ? "var(--dsw-alias-accent-bg-muted, #eef4fb)"
-              : "transparent",
             color: "var(--dsw-alias-fg-default, #111)",
             fontSize: 12,
           },
-          onClick: () => {
-            STUDIO_STATE.open = !STUDIO_STATE.open;
-            window.dispatchEvent(new CustomEvent("capture:overlay-toggle"));
-          },
+          onClick: handleOpen,
         },
         [h("span", null, "📁"), h("span", null, "Capture")],
       );
@@ -392,11 +359,34 @@ window.__ModuleLoader__.load({
           ),
         );
 
+        // Double registration for right sidebar workspace page:
+        //
+        // 1. Register Tab type via sidebarRightTabs service (defensive).
+        //    ctx.inject may not exist in all DSH versions; guard with typeof.
+        if (typeof ctx.inject === "function") {
+          ctx.inject(["sidebarRightTabs"], (sidebarRightTabs) => {
+            if (sidebarRightTabs && typeof sidebarRightTabs.register === "function") {
+              const tabDefinition = {
+                id: "capture-studio-tab",
+                kind: "capture",
+                title: "Capture",
+                priority: "extension",
+                keepMounted: true,
+              };
+              ctx.effect(() => sidebarRightTabs.register(tabDefinition), "capture:sidebar-tab-type");
+            } else {
+              console.warn("[capture] sidebarRightTabs service or register method not available");
+            }
+          });
+        }
+
+        // 2. Register Tab body to keyed slot.
+        //    key MUST strictly equal tabDefinition.id above.
         ctx.slots.inject("sidebar.right.pane.tab", () =>
           ctx.slots.register(
             {
               name: "sidebar.right.pane.tab",
-              key: "capture",
+              key: "capture-studio-tab",
             },
             StudioPanel,
           ),
