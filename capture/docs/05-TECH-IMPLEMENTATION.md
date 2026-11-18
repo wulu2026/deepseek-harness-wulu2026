@@ -237,7 +237,7 @@ export class MediaProvider {
 
 ## 11. 客户端实现（阶段 1 已实现）
 
-阶段 1 UI 最小但完整：项目列表面板（CapturePanel）渲染于 `conversation.composer.dock`。
+阶段 1 UI 最小但完整：Capture工作室面板（右侧常驻，宽 500px）通过 `shell.overlay` 渲染，面板内左侧为 Capture工作室左侧区（项目/资产列表），右侧为 Capture工作室右侧故事板（故事大纲 + 世界观与人物设定 + 分镜脚本表格）。底部 `conversation.composer.dock` 显示 "Capture N project(s)" 徽章。
 
 - 使用 React `createElement`（工厂风格）；样式用 CSS 变量令牌（`--dsw-alias-fg-default`、`--dsw-alias-stroke-default`、`--dsw-alias-danger-default`），不硬编码颜色。
 - 不将 `@deepseek-ai/dsh-client-ui-primitives` 作为运行时模块导入（ADR-009）。
@@ -423,3 +423,20 @@ Client uses same-origin `fetch` with `credentials: "same-origin"`. Every mutatio
 - [x] client `safeJson` + `conversation.composer.dock` slot registration
 - [ ] minimal 8 tool wrappers (phase 1+)
 - [ ] tools-guard deny invalid scope if necessary
+
+---
+
+## 19. 实现进度（MVP）
+
+按以下顺序实现，每步完成后 commit：
+
+| 步骤 | 内容 | 状态 |
+|------|------|------|
+| 1 | Capture工作室面板框架（右侧常驻，宽 500px）：Capture工作室左侧区（项目/资产列表）+ Capture工作室右侧故事板（故事大纲 + 世界观与人物设定 + 分镜脚本表格），顶部栏：联动开关 + 章节切换器 + 项目/资产标签 | 进行中 |
+| 2 | Capture工作室左侧区：项目列表（名称、类型、一句话梗概、创建时间、最后修改时间）+ 新建项目弹窗 | 待定 |
+| 3 | Capture工作室左侧区：资产网格卡片（角色/场景/物品三类切换）+ 新建资产弹窗（名称、描述） | 待定 |
+| 4 | Capture工作室右侧故事板：故事大纲 / 剧情摘要显示 | 待定 |
+| 5 | Capture工作室右侧故事板：世界观与人物设定显示 | 待定 |
+| 6 | Capture工作室右侧故事板：分镜脚本表格（编号、时长、景别+角度、运镜、画面描述、出场角色与动作、台词/旁白、音效/音乐、资产绑定、状态徽章，支持横向滑动、行内编辑） | 待定 |
+| 7 | Capture工作室右侧故事板顶部：联动开关（对话智能体交互高亮跳转 + 待审核徽章） | 待定 |
+| 8 | 全流程串联验证 | 待定 |

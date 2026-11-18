@@ -2,23 +2,23 @@
 
 ## 1. 范围定义
 
-### 1.1 范围内（v1.0）
+### 1.1 范围内（阶段 1 MVP）
 
-- 创作数据模型：Project / Chapter / Scene / Shot / Asset / Generation / Trailer
-- 对话驱动的增删改查（智能体工具 + UI 面板）
+- 创作数据模型：Project / Chapter / Shot / Asset（Trailer/Generation 暂不实现）
+- 对话驱动的增删改查（智能体工具 + Capture工作室面板）
 - 资产库复用与“身份锁定”（identity lock）
-- 生成：角色图 / 镜头静帧 / 镜头视频 / 预告片
 - 来源追溯与版本
-- 导出：Markdown / JSON / .docx（文本）+ mp4（视频）
-- 与 DSH 的会话、智能体、交付物、作业、存储集成
+- 导出：Markdown / JSON / .docx（文本）（视频导出阶段 3）
+- 与 DSH 的会话、智能体、交付物、存储集成
 
-### 1.2 范围外（v1）
+### 1.2 范围外（阶段 1）
 
-- 多人协作 / 共享作品库 / 市场（Market）（v2）
-- 时间线编辑器（v2）
-- 移动端 / Web（UI 兼容 Web 但不测试，v2）
-- 非 DeepSeek 提供的专有生成模型比价（v2）
-- 版权 / 许可（v2）
+- 多人协作 / 共享作品库 / 市场（Market）（阶段 2+）
+- 时间线编辑器（阶段 2+）
+- 移动端 / Web（UI 兼容 Web 但不测试，阶段 2+）
+- 非 DeepSeek 提供的专有生成模型比价（阶段 2+）
+- 版权 / 许可（阶段 2+）
+- 图像 / 视频生成（阶段 2 / 阶段 3；阶段 1 仅模拟提供商）
 
 ## 2. 用户画像 & 用例（Use cases）
 
@@ -28,15 +28,14 @@
 2. 大纲智能体提议 6 个主要角色 + 三幕结构；作家接受/修改。
 3. 作家：“第1章，主角爬塔。” → 故事智能体生成章节草稿（markdown）。
 4. “拆分镜” → 镜头导演智能体生成 8 个镜头 + 镜头/动作/对白。
-5. “给我主角的设定图” → 角色图生成（图像生成）。
-6. “生成第3个镜头的视频” → 镜头视频生成。
-7. “把 2 个高光拼成 30 秒宣传片” → 预告片生成。
-8. `present()` 交付 mp4；用户下载。
+5. “创建角色‘林’” → 在资产库中创建资产“主角-林”，绑定参考图。
+6. “给镜头 3 绑定资产‘林’” → 在分镜脚本表格中将资产绑定到镜头 3。
+7. “导出” → 导出 screenplay.md + shotlist.csv。
 
 ### UC-2 一致性（Writer-A）
 
 - 创建资产“主角-林”（character），绑定 4 张参考图 + 风格种子。
-- 在镜头 4 中使用该资产；生成静帧时自动注入身份锁定。
+- 在镜头 4 中使用该资产；生成静帧时（阶段 2）自动注入身份锁定。
 - 后续重新生成可“使用种子 X / 相同参考图”。
 
 ### UC-3 剧本（Writer-B）
@@ -45,7 +44,7 @@
 - 镜头清单从节拍表自动生成；并派生镜头/地点。
 - 导出 screenplay.md（Fountain 风格）+ shot list.csv。
 
-### UC-4 宣传片剪切（Creator-D）
+### UC-4 宣传片剪切（Creator-D）（阶段 3）
 
 - 从已完成作品导入“高光节拍” → 生成带标题卡的 30 秒预告片。
 - 两种风格：预告片（电影感）/ 社交（9:16 竖版裁剪）。
@@ -55,7 +54,7 @@
 - 作家分叉第 4 章 → 尝试 A/B 结局；比较差异 → 选择。
 - 通过子智能体对比一致性问题。
 
-### UC-6 智能体自动一致性检查
+### UC-6 智能体自动一致性检查（阶段 2）
 
 - 一致性智能体扫描已完成内容 → 标记：“林在镜头 9 的头发颜色与资产不匹配” → 提出修复建议。
 
@@ -63,47 +62,52 @@
 
 见 [`02-PRODUCT-DESIGN.md`](02-PRODUCT-DESIGN.md) §2。
 
-4 个主视图（DSH 槽位 `main` 右侧面板？或 `conversation` 旁）：
+### Capture工作室面板（右侧常驻，宽 500px）
 
-- **工作室面板** = 项目/章节/分镜（树形）+ 详情编辑器
-- **资产库** = 资产列表 + 生成器
-- **生成队列与结果** = 进行中 / 历史
-- **预告片工作室** = 高光挑选 + 风格 + 导出
+Capture 工作室作为 `shell.overlay` 右侧常驻面板，通过左侧全局导航 `sidebar.panellist` 的 "Capture" 图标打开/关闭。面板内分为左右两部分：
 
-DSH 的 main 视图是会话驱动（`uiWorkspace.openSession`），我们计划：
+- **Capture工作室左侧区**：项目列表 / 资源列表（资产按 角色/场景/物品 分类切换）
+- **Capture工作室右侧故事板**：故事大纲 / 剧情摘要 → 世界观与人物设定 → 分镜脚本表格（编号、时长、景别+角度、运镜、画面描述、出场角色与动作、台词/旁白、音效/音乐、资产绑定、状态徽章）
 
-- 使用 `settings.general.item` 注册一个 **“Capture”设置/页面**（可选）
-- 使用 `main` 槽位还是 `shell.overlay`？更倾向于**侧边面板 blade**？实际上 DSH Web 的 `main` 按会话显示对话。我们设计为**会话范围**：每个会话*可以*绑定到一个项目。打开“Capture”面板会通过 `shell.overlay` 或 `main` 槽位注册打开一个与会话绑定的工作室（插件自有子视图）。细节见 TECH。
+### 顶部栏（Capture工作室面板顶部）
+
+从左到右：联动开关（默认关闭）→ 章节切换器（下拉选择器）→ 项目/资产标签页切换。
+
+### 底部 composer.dock 徽章
+
+显示 "Capture N project(s)"，轻量状态入口，点击打开 Capture工作室面板。
+
+**决策**：面板使用 `shell.overlay`（右侧常驻面板，宽 500px），通过 `sidebar.panellist` 左侧图标入口开关。不采用 `main` 槽位替换，避免与宿主会话视图冲突。
 
 ## 4. 功能矩阵 & 优先级
 
-| ID | 功能 | 阶段 | 优先级 | 负责智能体 |
-|---|---|---|---|---|
-| F1.1 | 项目增删改查（名称、类型、一句话梗概） | 1 | P0 | Story Manager |
-| F1.2 | 章节/场景增删改查 | 1 | P0 | Story Manager |
-| F1.3 | 富文本编辑器（markdown + 块） | 1 | P0 | UI |
-| F1.4 | 大纲 / 节拍表 | 1 | P1 | Outline Agent |
-| F2.1 | 镜头实体增删改查 | 1 | P0 | Shot Director |
-| F2.2 | 镜头清单版本 | 1 | P1 | Story Manager |
-| F2.3 | Fountain 风格剧本导入/导出 | 1 | P1 | Exporter |
-| F3.1 | 资产增删改查（角色/道具/地点/风格） | 1 | P0 | Asset Manager |
-| F3.2 | 资产版本管理 | 1 | P1 | Asset Manager |
-| F3.3 | 参考图上传（文件） | 1 | P0 | UI |
-| F3.4 | 身份锁定模板 | 1 | P0 | Asset Manager |
-| F4.1 | 角色图生成 | 2 | P0 | Gen Agent |
-| F4.2 | 镜头静帧生成 | 2 | P0 | Gen Agent |
-| F4.3 | 镜头视频生成 | 3 | P0 | Gen Agent |
-| F4.4 | 预告片剪辑 | 3 | P0 | Trailer Agent |
-| F4.5 | 竖版/社交裁剪 | 3 | P2 | Trailer Agent |
-| F5.1 | 资产绑定到镜头 | 2 | P0 | Shot Director |
-| F5.2 | 一致性检查（智能体） | 2 | P1 | Consistency Agent |
-| F6.1 | 分支/分叉 + 差异 + 选择 | 1 | P1 | Story Manager |
-| F7.1 | 高光节拍 → 预告片 | 3 | P0 | Trailer Agent |
-| F7.2 | 标题卡 / 字幕 | 3 | P2 | Trailer Agent |
-| F8.1 | 大纲/场景/镜头智能体 | 1 | P0 | 全部 |
-| F8.2 | 一致性智能体 | 2 | P1 | 全部 |
-| F9.1 | 导出 md/json/docx | 1 | P1 | Exporter |
-| F9.2 | 导出 mp4 + `present()` | 3 | P0 | Exporter |
+| ID | 功能 | 阶段 | 优先级 | 负责智能体 | 工具名（DSH 工具名） |
+|---|---|---|---|---|---|
+| F1.1 | 项目增删改查（名称、类型、一句话梗概） | 1 | P0 | Story Manager | `capture_project_create/list` |
+| F1.2 | 章节/章节镜头增删改查 | 1 | P0 | Story Manager | `capture_chapter_*` |
+| F1.3 | 富文本编辑器（markdown + 块） | 1 | P0 | UI | — |
+| F1.4 | 大纲 / 节拍表 | 1 | P1 | Outline Agent | — |
+| F2.1 | 镜头实体增删改查 | 1 | P0 | Shot Director | `capture_shot_*` |
+| F2.2 | 镜头清单版本 | 1 | P1 | Story Manager | — |
+| F2.3 | Fountain 风格剧本导入/导出 | 1 | P1 | Exporter | — |
+| F3.1 | 资产增删改查（角色/道具/地点/风格） | 1 | P0 | Asset Manager | `capture_asset_*` |
+| F3.2 | 资产版本管理 | 1 | P1 | Asset Manager | — |
+| F3.3 | 参考图上传（文件） | 1 | P0 | UI | — |
+| F3.4 | 身份锁定模板 | 1 | P0 | Asset Manager | — |
+| F4.1 | 角色图生成 | 2 | P0 | Gen Agent | — |
+| F4.2 | 镜头静帧生成 | 2 | P0 | Gen Agent | — |
+| F4.3 | 镜头视频生成 | 3 | P0 | Gen Agent | — |
+| F4.4 | 预告片剪辑 | 3 | P0 | Trailer Agent | — |
+| F4.5 | 竖版/社交裁剪 | 3 | P2 | Trailer Agent | — |
+| F5.1 | 资产绑定到镜头 | 2 | P0 | Shot Director | — |
+| F5.2 | 一致性检查（智能体） | 2 | P1 | Consistency Agent | — |
+| F6.1 | 分支/分叉 + 差异 + 选择 | 1 | P1 | Story Manager | — |
+| F7.1 | 高光节拍 → 预告片 | 3 | P0 | Trailer Agent | — |
+| F7.2 | 标题卡 / 字幕 | 3 | P2 | Trailer Agent | — |
+| F8.1 | 大纲/场景/镜头智能体 | 1 | P0 | 全部 | — |
+| F8.2 | 一致性智能体 | 2 | P1 | 全部 | — |
+| F9.1 | 导出 md/json/docx | 1 | P1 | Exporter | — |
+| F9.2 | 导出 mp4 + `present()` | 3 | P0 | Exporter | — |
 
 ## 5. 数据 & 状态（数据契约）
 
@@ -155,9 +159,9 @@ Trailer {
 
 ### 5.2 存储放置
 
-- 主机存储域：插件命名空间 `capture`（在技术验证中确认；见开放问题 Q1）。
-- JSON 文件位于 `$DSH_HOME/storages/capture/` 或插件自有应用数据目录（检查后确定）。
-- 媒体：`$DSH_HOME/.../capture/media/<projectId>/<assetId>/...` + 通过 DSH 交付物/引用服务提供文件引用。
+- 主机存储域：插件命名空间 `capture`（基于 DSH storage-domain，域名 `capture`，版本 1，表 `projects/chapters/shots/assets/generations/trailers`）。
+- 存储路径由 DSH profile 配置的存储后端决定，插件不自建文件树，也不直接读写存储文件（ADR-010）。
+- 媒体：通过 DSH 交付物/引用服务提供文件引用，具体路径由存储后端决定。
 - **按会话 vs 全局**：项目是全局实体（跨会话），媒体文件是全局的。会话只持有当前“工作集”指针 + 智能体上下文 + 聊天。这对 DSH 不寻常（大多数状态是会话派生的）。理由：作为存储服务 + 其上投影；允许任意会话中的智能体打开项目。
 
 ### 5.3 事件溯源考虑
@@ -179,7 +183,7 @@ Trailer {
   - **Gen Agent**（图像/视频）：生成作业与提示词编译。
   - **Trailer Agent**：节拍选择与预告片编译。
   - **Exporter**：导出格式 + present。
-- 工具面通过 `ctx.tools` 注册：`capture.*` 工具（需验证实际 API）。
+- 工具面通过 `ctx.tools.register` 注册，工具名采用 snake_case：`capture_project_create`、`capture_project_list`、`capture_chapter_*`、`capture_shot_*`、`capture_asset_*`（ADR-018）。
 - 重推理使用子智能体以保持主上下文精简（按实践 #28 — 后续）。
 
 ## 7. 提供商抽象（生成）
@@ -205,21 +209,26 @@ interface MediaProvider {
 
 阶段 1：
 
-- E1：`/story new "X"` + `/story chapter add` + `/story shotlist generate` 生成项目 + 章节 + 5 个镜头；显示在工作室面板。
-- E2：智能体可通过 `capture_shot.update` 编辑镜头对白；显示差异。
-- E3：创建资产 + 绑定到镜头；一致性警告可见。
-- E4：分叉章节 → 2 个分支；选择胜出恢复。
-- E5：导出 screenplay.md + shotlist.csv。
-- E6：主机冒烟 & 客户端冒烟通过；兼容性检查通过。
+- E1：`/story new "X"` + `/story chapter add` + `/story shotlist generate` 生成项目 + 章节 + 5 个镜头；在 Capture工作室右侧故事板中显示。
+- E2：左侧区项目列表显示项目名、类型、一句话梗概、创建时间、最后修改时间；点击项目右侧故事板替换显示该项目。
+- E3：左侧区资产网格卡片（角色/场景/物品三类切换）；点击资产卡片弹出对话框（名称、描述）。
+- E4：右侧区故事板显示故事大纲/剧情摘要、世界观与人物设定、分镜脚本表格。
+- E5：分镜脚本表格支持横向滑动、行内编辑；显示编号、时长、景别+角度、运镜、画面描述、出场角色与动作、台词/旁白、音效/音乐、资产绑定、状态徽章。
+- E6：智能体可通过 `capture_shot.update` 编辑镜头对白；显示差异；右侧区显示“待审核”徽章。
+- E7：创建资产 + 绑定到镜头；一致性警告可见。
+- E8：分叉章节 → 2 个分支；选择胜出恢复。
+- E9：导出 screenplay.md + shotlist.csv。
+- E10：主机冒烟 & 客户端冒烟通过；兼容性检查通过。
+- E11：联动开关打开后，对话中提到的镜头/章节在右侧故事板自动高亮并跳转。
 
 阶段 2：
 
-- E7：角色图生成 + 预览；来源追溯存储。
-- E8：相同种子重新生成可复现（提供商允许时）。
+- E12：角色图生成 + 预览；来源追溯存储。
+- E13：相同种子重新生成可复现（提供商允许时）。
 
 阶段 3：
 
-- E9：镜头视频生成 + 预告片导出（mp4）`present()`。
+- E14：镜头视频生成 + 预告片导出（mp4）`present()`。
 
 ## 9. 风险缓解的具体承诺
 

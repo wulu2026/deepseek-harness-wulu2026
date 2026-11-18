@@ -56,7 +56,10 @@ Capture 是 DeepSeek Harness (DSH) 的一个 **bundle 插件**，面向作家/�
 - `window.__ModuleLoader__.load({ id: "@local/capture", factory(require) {...} })`
   - `factory(require)` 内 `require("react")`，通过 React `createElement` 手写组件（不引入 `@deepseek-ai/dsh-client-ui-primitives` 作为运行时模块，符合 ADR-009）。
   - 返回 `{ inject: ["slots"], apply(ctx) {...} }`，由 `cordis-client-runner` 激活为客户端 Cordis 插件。
-  - `apply(ctx)` 内 `ctx.slots.inject("conversation.composer.dock", () => ctx.slots.register({ name: "conversation.composer.dock", id: "capture", order: 4 }, CapturePanel))`，把 `CapturePanel` 注入会话作曲家 dock 槽位（`kind: list, scope: session`，已在 `dsh-client-ui-conversation` 中声明）。
+  - `apply(ctx)` 注册三个槽位：
+    - `conversation.composer.dock`（`kind: list, scope: session`）：底部徽章 "Capture N project(s)"，轻量状态入口。
+    - `sidebar.panellist`（`kind: list, scope: root`）：左侧全局导航 "Capture" 图标，点击打开/关闭 Capture工作室面板。
+    - `shell.overlay`（`kind: list, scope: root`）：右侧 Capture工作室面板，固定宽度 500px，右侧常驻，包含 Capture工作室左侧区（项目/资产列表）和 Capture工作室右侧故事板（故事大纲 + 世界观与人物设定 + 分镜脚本表格）。
 
 ### 3.3 区域设置与元数据
 
@@ -119,12 +122,21 @@ Capture 是 DeepSeek Harness (DSH) 的一个 **bundle 插件**，面向作家/�
 
 ## 5. 客户端侧（Client half，`client.js`）具体实现
 
-### 5.1 组件 `CapturePanel`
+### 5.1 客户端组件
 
+**CapturePanel（composer dock 徽章）**：
 - React 函数组件，`useState({ projects: [], error: null, loading: true })`。
 - `useEffect` 在挂载时 `fetch("/api/capture/state", { credentials: "same-origin" })`，通过 `safeJson` 解析（见 §5.2），成功则设置 `projects`，失败则设置 `error`；卸载时置 `active = false` 防止状态更新。
 - 渲染为内联 flex 条，显示 "Capture" + "loading…" / "N project(s)"，错误时以危险色显示错误码。
 - 样式使用 CSS 变量令牌（`--dsw-alias-fg-default`、`--dsw-alias-stroke-default`、`--dsw-alias-danger-default`），不硬编码颜色。
+
+**StudioPanel（右侧 Capture工作室面板）**：
+- `ctx.slots.inject("shell.overlay", ...)` 注册 `{ name: "capture.overlay", id: "capture.overlay", order: 50 }`。
+- 固定宽度 500px，右侧常驻。
+- 左侧为 Capture工作室左侧区：项目列表（项目名、类型、一句话梗概、创建时间、最后修改时间）或资产网格卡片（角色/场景/物品切换）。
+- 右侧为 Capture工作室右侧故事板：故事大纲/剧情摘要、世界观与人物设定、分镜脚本表格（编号、时长、景别+角度、运镜、画面描述、出场角色与动作、台词/旁白、音效/音乐、资产绑定、状态徽章，支持横向滑动、行内编辑）。
+- 顶部栏：联动开关（默认关闭，位于章节切换器左侧）+ 章节切换器（下拉选择器）+ 项目/资产标签页。
+- 底部：智能体建议条（可折叠，显示差优先编辑建议，点击查看 diff 并接受/拒绝）。
 
 ### 5.2 `safeJson` 响应解析（P1 防护）
 
@@ -132,7 +144,9 @@ Capture 是 DeepSeek Harness (DSH) 的一个 **bundle 插件**，面向作家/�
 
 ### 5.3 槽位注册
 
-`ctx.slots.inject("conversation.composer.dock", ...)` 注册 `{ name: "conversation.composer.dock", id: "capture", order: 4 }`，`CapturePanel` 渲染于会话作曲家 dock（输入框下方的 ambient 区域）。
+- `ctx.slots.inject("conversation.composer.dock", ...)` 注册 `{ name: "conversation.composer.dock", id: "capture", order: 4 }`，`CapturePanel` 渲染于会话作曲家 dock（输入框下方的 ambient 区域）。
+- `ctx.slots.inject("sidebar.panellist", ...)` 注册 `{ name: "sidebar.panellist", id: "capture.open", order: 450, label: "Capture" }`，`MenuEntry` 渲染左侧全局导航 "Capture" 图标，点击打开/关闭 Capture工作室面板。
+- `ctx.slots.inject("shell.overlay", ...)` 注册 `{ name: "shell.overlay", id: "capture.overlay", order: 50 }`，`StudioPanel` 渲染右侧 Capture工作室面板。
 
 ---
 
