@@ -1,6 +1,7 @@
-# Capture project instructions
+# Capture 项目指引
 
-- Review before commit: stage and show `git diff`, wait for explicit user confirmation.
-- Specs first: update `capture/docs/04-TECH-ARCHITECTURE.md`, `capture/docs/05-TECH-IMPLEMENTATION.md`, and `capture/docs/07-DECISIONS.md` before Phase 1 changes.
-- Preserve the clean whitespace gate: one newline at EOF, no trailing whitespace in committed files.
-- Do not push unless the user explicitly asks.
+- 提交前审查：修改好先暂存，等待用户 review / 明确确认，经用户同意后才 commit。
+- 规格先行：修改代码之前，先确认技术方案（更新 `capture/docs/04-TECH-ARCHITECTURE.md`、`capture/docs/05-TECH-IMPLEMENTATION.md` 和 `capture/docs/07-DECISIONS.md`）。
+- 保持整洁空格规则：文件末尾一个换行符，提交文件中不得有尾随空格。
+- 未经用户明确请求，不得推送。
+- 有不明确、不确定的地方，要向用户提问并确认；不知道的就说不知道，不要乱写。
