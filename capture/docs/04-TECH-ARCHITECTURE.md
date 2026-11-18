@@ -4,11 +4,19 @@
 
 Capture 是 DeepSeek Harness (DSH) 的一个 **bundle 插件**，面向作家/编剧，对话优先创作（小说→分镜→图→视频→宣传片）。形态为 DSH Bundle，通过 profile 安装，分为 **宿主侧（Host half，`index.js`）与客户端侧（Client half，`client.js`）** 两半边，通过 Cordis 插件协议加载。
 
-本文档记录阶段 1 完成后的真实架构：插件如何注册、如何加载、包含哪些内容、各半边分别做了什么，以及客户端—宿主数据流的具体走向。所有声明均已在真实 `desktop` profile 上安装并冒烟验证（见 `PROGRESS.md` §2 末）。
+本文档记录技术架构：插件如何注册、如何加载、包含哪些内容、各半边分别做了什么，以及客户端—宿主数据流的具体走向。所有声明均已在真实 `desktop` profile 上安装并冒烟验证（见 `PROGRESS.md` §2 末）。阶段 2+ 的架构大类（AI 创作与多Agent、UI 与对话联动、数据与存储扩展等）已预留占位，待后续实现时补全。
 
 ---
 
-## 2. 代码布局（阶段 1）
+## 2. 插件框架与骨架（阶段 1 已实现，最小骨架）
+
+### 2.1 概述与形态
+
+- DSH Bundle 插件，通过 `plugin_manager install_bundle target=/abs/path/to/capture` 安装到 profile，不要手动编辑 profile 的 `package.json`/`cordis.patch.yml`。
+- Host + Client 双半边，通过 Cordis 插件协议加载。
+- 纯 JS 工厂 bundle（无编译步骤），Host 为 ESM `apply(ctx, config)` 入口，Client 为 `window.__ModuleLoader__.load({...})` 工厂。
+
+### 2.2 代码布局与文件结构
 
 ```text
 @local/capture
@@ -22,36 +30,33 @@ Capture 是 DeepSeek Harness (DSH) 的一个 **bundle 插件**，面向作家/�
 └─ tests/                # 空，阶段 1 待补充 host-smoke.mjs / client-smoke.mjs / compat-check.mjs
 ```
 
-阶段 1 **不拆分** `host/` 子模块，全部逻辑内联在 `index.js`；待实体/章节/镜头/资产扩展时再拆分为 `host/storage.js`、`host/models.js`、`host/services.js`、`host/tools.js`、`host/agents.js`。
+阶段 1 **不拆分** `host/` 子模块，全部逻辑内联在 `index.js`；待实体/章节/镜头/资产扩展时再拆分为 `host/storage.js`、`host/tools.js`、`host/services.js`、`host/agents.js` 等。
 
-安装方式：`plugin_manager install_bundle target=/abs/path/to/capture`（绝对路径，本地目录链接），不要手动编辑 profile 的 `package.json`/`cordis.patch.yml`。
-
----
-
-## 3. 插件注册与加载机制
-
-### 3.1 Cordis 插件协议（Host 半边 `index.js`）
+### 2.3 Host 侧架构（`index.js`）
 
 `index.js` 导出 Cordis 风格的插件对象：
 
-- `export const inject = ["storage", "storageDomain", "webServer", "tools", "systemPrompt"]`
-  - 声明硬依赖服务，DSH Loader 在这些服务全部就绪后才激活该插件 fiber，避免启动竞态。
-  - 五个服务名均与 DSH 实现一致（已在 `cordis_inspect_query Service.listService` 中确认）：
-    - `storage`：存储中心（`@deepseek-ai/dsh-storage`），提供 `backend` 注册表与 `mount`/`form`。
-    - `storageDomain`：已挂载的域设施（`@deepseek-ai/dsh-storage-domain`），提供 `open(spec)`、`get(name)`、`closeAll()`。
-    - `webServer`：浏览器 HTTP 承载服务（`@deepseek-ai/dsh-host-webserver`），提供 `register(route)`、`getOrigin()`。
-    - `tools`：模型面向工具注册与分发器（`@deepseek-ai/dsh-tools`），提供 `register(definition)` 返回 disposer。
-    - `systemPrompt`：提示词章节注册表（`@deepseek-ai/dsh-system-prompt`），提供 `section(section)` 返回 disposer。
-- `export async function apply(ctx, config)`：插件入口，在依赖激活后执行，执行以下注册（全部通过 `ctx.effect` 托管，卸载时逆序注销，见 §3.6）：
+- **`inject` 硬依赖服务**：`["storage", "storageDomain", "webServer", "tools", "systemPrompt"]`
+  - DSH Loader 在这些服务全部就绪后才激活该插件 fiber，避免启动竞态。
+  - 五个服务名均与 DSH 实现一致（已在 `cordis_inspect_query Service.listService` 中确认）。
+  - `storage`：存储中心（`@deepseek-ai/dsh-storage`），提供 `backend` 注册表与 `mount`/`form`。
+  - `storageDomain`：已挂载的域设施（`@deepseek-ai/dsh-storage-domain`），提供 `open(spec)`、`get(name)`、`closeAll()`。
+  - `webServer`：浏览器 HTTP 承载服务（`@deepseek-ai/dsh-host-webserver`），提供 `register(route)`、`getOrigin()`。
+  - `tools`：模型面向工具注册与分发器（`@deepseek-ai/dsh-tools`），提供 `register(definition)` 返回 disposer。
+  - `systemPrompt`：提示词章节注册表（`@deepseek-ai/dsh-system-prompt`），提供 `section(section)` 返回 disposer。
+
+- **`apply(ctx, config)`**：插件入口，在依赖激活后执行，全部注册通过 `ctx.effect` 托管，卸载时逆序注销：
   1. 打开存储域 `"capture"`（版本 1，表 `projects/chapters/shots/assets/generations/trailers`，阶段 1 仅使用 `projects`）；若已打开则复用句柄，避免 `already-open` 导致整个 Host 崩溃。
   2. 注册 `systemPrompt` 章节 `"capture"`（`order: 100`），告知模型 Capture 存在及可用工具。
   3. 注册模型面向工具 `capture_project_create`、`capture_project_list`（`ctx.tools.register`），每个返回的 disposer 用 `ctx.effect` 托管。
   4. 注册同源 JSON 路由 `GET /api/capture/state`、`POST /api/capture/projects`（`ctx.webServer.register`），每个返回的 disposer 用 `ctx.effect` 托管。
   5. 注册 teardown effect：关闭路由、关闭存储域。
 
-### 3.2 Cordis 插件协议（Client 半边 `client.js`）
+**P0 修复（ADR-016）**：`ctx.systemPrompt.section()` 返回的 disposer 必须通过 `ctx.effect(disposeSection, "capture:system-prompt-section")` 托管。此前未托管，导致插件重载/HMR 时重复注册同名章节，抛 `prompt section "capture" is already registered`，整个 Host 激活崩溃。修复后卸载时逆序注销，重载不再崩溃。
 
-`client.js` 使用客户端模块系统工历模式（与 DSH shipped 包的 `lib/client.js` 格式一致）：
+### 2.4 Client 侧架构（`client.js`）
+
+`client.js` 使用客户端模块系统工厂模式（与 DSH shipped 包的 `lib/client.js` 格式一致）：
 
 - `window.__ModuleLoader__.load({ id: "@local/capture", factory(require) {...} })`
   - `factory(require)` 内 `require("react")`，通过 React `createElement` 手写组件（不引入 `@deepseek-ai/dsh-client-ui-primitives` 作为运行时模块，符合 ADR-009）。
@@ -59,14 +64,14 @@ Capture 是 DeepSeek Harness (DSH) 的一个 **bundle 插件**，面向作家/�
   - `apply(ctx)` 注册三个槽位：
     - `conversation.composer.dock`（`kind: list, scope: session`）：底部徽章 "Capture N project(s)"，轻量状态入口。
     - `sidebar.panellist`（`kind: list, scope: root`）：左侧全局导航 "Capture" 图标，点击打开/关闭 Capture工作室面板。
-    - `shell.overlay`（`kind: list, scope: root`）：右侧 Capture工作室面板，固定宽度 500px，右侧常驻，包含 Capture工作室左侧区（项目/资产列表）和 Capture工作室右侧故事板（故事大纲 + 世界观与人物设定 + 分镜脚本表格）。
+    - `shell.overlay`（`kind: list, scope: root`）：右侧 Capture工作室面板，右侧常驻。
 
-### 3.3 区域设置与元数据
+### 2.5 区域设置与元数据
 
 - `locale/en.json`、`locale/zh.json` 各含 `meta.title` / `meta.description`，供插件管理面板显示。
 - `package.json` `dsh.client.inject` 声明客户端依赖 `@deepseek-ai/dsh-client-ui-conversation`、`@deepseek-ai/dsh-client-ui-workspace`、`@deepseek-ai/dsh-client-ui-settings`、`@deepseek-ai/dsh-client-locale`，平台 `web`，`immediately: true`。
 
-### 3.4 加载顺序
+### 2.6 加载顺序
 
 1. DSH profile Loader 读取 `cordis.patch.yml` 的 insert 行 `id: capture, name: '@local/capture'`。
 2. Loader 解析 `@local/capture`（通过 `plugin_manager install_bundle` 建立的 profile `node_modules` 链接）。
@@ -75,82 +80,7 @@ Capture 是 DeepSeek Harness (DSH) 的一个 **bundle 插件**，面向作家/�
 
 ---
 
-## 4. 宿主侧（Host half，`index.js`）具体实现
-
-### 4.1 存储域（`ctx.storageDomain`）
-
-- 域名 `capture`，版本 1，声明表 `projects`、`chapters`、`shots`、`assets`、`generations`、`trailers`。
-- 阶段 1 因插件包不可将 DSH 内部 bundle `@deepseek-ai/dsh-storage-domain` 及 `zod` 作为 pnpm 依赖（ADR-019），内联了 `defineDomain` / `domainTable` 微型构建器，并使用 passthrough schema `{ parse: (v) => v }`，让 `storageDomain.loadAll()` / `put()` 先能工作；真正的 Zod 校验留待后续阶段补上。
-- 阶段 1 仅操作 `projects` 表：`put(id, { name, genre, logline, createdAt, updatedAt })`、`entries()` 遍历。
-- 记录 ID 用 `crypto.randomUUID()`，时间戳用 `Date.now()`。
-
-### 4.2 模型面向工具（`ctx.tools.register`）
-
-工具名采用 snake_case（`capture_project_create`、`capture_project_list`），符合 DSH 工具名校验（a-z/A-Z/0-9/underscore/dash），见 ADR-018。
-
-每个工具声明：
-- `name`、`description`、`parameters`（JSON Schema 受限子集，`type: object`，`additionalProperties: false`）。
-- `output`：`{ schema: { type: "object" }, render: (_args, value) => [{ type: "text", text: JSON.stringify(value) }] }`，`render` 产出 `TextBlock`（`{type: "text", text: string}`）。
-- `execute(args, exec)`：异步执行，返回 `{ ok: boolean, ... }` 结果信封。
-
-阶段 1 已实现：
-- `capture_project_create({ name, genre?, logline? })` → 校验 name 非空，写入 `projects` 表，返回 `{ ok: true, project: { id, name, createdAt } }`。
-- `capture_project_list({})` → 读取 `projects` 表全部条目，返回 `{ ok: true, projects: [{ id, name, genre, createdAt }] }`。
-
-### 4.3 Web 路由（`ctx.webServer.register`）
-
-阶段 1 提供两条 exact 路由（均同源信任门限，见 §5）：
-
-| 方法 | 路径 | 处理 |
-|---|---|---|
-| GET | `/api/capture/state` | 返回 `{ ok: true, projects: [{id, name, genre, createdAt}] }` |
-| POST | `/api/capture/projects` | body `{ name, genre?, logline? }`，校验 name，写入 `projects`，返回 `{ ok: true, project: {...} }` |
-
-每条路由返回的 disposer 用 `ctx.effect` 托管；处理函数统一捕获异常并返回 `HTTP 500 { ok: false, error: "CaptureInternalError", message }`；非 JSON POST body 返回 `HTTP 400 { ok: false, error: "invalid-json-body" }`；非匹配 method 返回 `HTTP 405`。
-
-### 4.4 系统提示词章节（`ctx.systemPrompt.section`）
-
-注册章节 `"capture"`，`order: 100`，文本说明 Capture 是故事/分镜/预告片创作工作区，指导模型使用 `capture_project_create/list`，并提示“未经用户指示，不要擅自修改项目”。
-
-**P0 修复（ADR-016）**：`ctx.systemPrompt.section()` 返回的 disposer 必须通过 `ctx.effect(disposeSection, "capture:system-prompt-section")` 托管。此前未托管，导致插件重载/HMR 时重复注册同名章节，抛 `prompt section "capture" is already registered`，整个 Host 激活崩溃。修复后卸载时逆序注销，重载不再崩溃。
-
-### 4.5 生命周期与清理
-
-所有注册（工具、路由、systemPrompt 章节、存储域句柄）均通过 `ctx.effect` 关联一个 disposer，插件卸载时逆序执行：先注销路由、再关闭存储域。存储域复用已打开句柄（`ctx.storageDomain.get("capture")`），避免 `already-open`。
-
----
-
-## 5. 客户端侧（Client half，`client.js`）具体实现
-
-### 5.1 客户端组件
-
-**CapturePanel（composer dock 徽章）**：
-- React 函数组件，`useState({ projects: [], error: null, loading: true })`。
-- `useEffect` 在挂载时 `fetch("/api/capture/state", { credentials: "same-origin" })`，通过 `safeJson` 解析（见 §5.2），成功则设置 `projects`，失败则设置 `error`；卸载时置 `active = false` 防止状态更新。
-- 渲染为内联 flex 条，显示 "Capture" + "loading…" / "N project(s)"，错误时以危险色显示错误码。
-- 样式使用 CSS 变量令牌（`--dsw-alias-fg-default`、`--dsw-alias-stroke-default`、`--dsw-alias-danger-default`），不硬编码颜色。
-
-**StudioPanel（右侧 Capture工作室面板）**：
-- `ctx.slots.inject("shell.overlay", ...)` 注册 `{ name: "capture.overlay", id: "capture.overlay", order: 50 }`。
-- 固定宽度 500px，右侧常驻。
-- 左侧为 Capture工作室左侧区：项目列表（项目名、类型、一句话梗概、创建时间、最后修改时间）或资产网格卡片（角色/场景/物品切换）。
-- 右侧为 Capture工作室右侧故事板：故事大纲/剧情摘要、世界观与人物设定、分镜脚本表格（编号、时长、景别+角度、运镜、画面描述、出场角色与动作、台词/旁白、音效/音乐、资产绑定、状态徽章，支持横向滑动、行内编辑）。
-- 顶部栏：联动开关（默认关闭，位于章节切换器左侧）+ 章节切换器（下拉选择器）+ 项目/资产标签页。
-- 底部：智能体建议条（可折叠，显示差优先编辑建议，点击查看 diff 并接受/拒绝）。
-
-### 5.2 `safeJson` 响应解析（P1 防护）
-
-对非 JSON 响应（如纯文本错误页）返回 `{ ok: false, error: "HTTP_<status>", message: <前 200 字符> }`，避免 `res.json()` 解析纯文本抛出未捕获异常崩溃客户端（已在 `c1e7dee24d` 中引入）。
-
-### 5.3 槽位注册
-
-- `ctx.slots.inject("conversation.composer.dock", ...)` 注册 `{ name: "conversation.composer.dock", id: "capture", order: 4 }`，`CapturePanel` 渲染于会话作曲家 dock（输入框下方的 ambient 区域）。
-- `ctx.slots.inject("sidebar.panellist", ...)` 注册 `{ name: "sidebar.panellist", id: "capture.open", order: 450, label: "Capture" }`，`MenuEntry` 渲染左侧全局导航 "Capture" 图标，点击打开/关闭 Capture工作室面板。
-- `ctx.slots.inject("shell.overlay", ...)` 注册 `{ name: "shell.overlay", id: "capture.overlay", order: 50 }`，`StudioPanel` 渲染右侧 Capture工作室面板。
-
----
-
-## 6. 客户端—宿主数据流（S2 已验证）
+## 3. 客户端—宿主数据流（S2 已验证）
 
 - **通道**：Host `ctx.webServer.register` 暴露 `/api/capture/*` exact 路由；Client 通过同源 `fetch` 调用。阶段 1 **不引入 Typert / `@Remote`**，保持 plain bundle 形态（ADR-015/017）。
 - **信任门限**：Host 路由处理前执行 `trustReport(request)`：`Sec-Fetch-Site: cross-site` 拒绝；`Origin: null` 拒绝；有 `Origin` 则比对 `host`；缺席 `Origin`（桌面壳转发/非浏览器客户端）放行。此模式复用 dsh-archived。
@@ -161,60 +91,115 @@ Capture 是 DeepSeek Harness (DSH) 的一个 **bundle 插件**，面向作家/�
 
 ---
 
-## 7. 生成管道（概览，阶段 2+）
+## 4. AI 创作与多Agent 架构（阶段 1+ 预留）
 
-```text
-UI/Agent
-  -> capture.generateImage({ shotId|assetId, kind, params })
-     -> Gen Agent 从资产身份锁定 + 风格 + 镜头编译提示词
-     -> MediaProvider.generateImage -> 文件
-     -> 记录 Generation 行 + 链接到 Shot/Asset（版本递增）
-     -> 发出变更事件 -> UI 更新；作业进度
-```
+### 4.1 智能体预设与技能
 
-视频：
-- 镜头视频：提供商图生视频或文生视频（取决于能力）→ 存储片段
-- 预告片：选择节拍 → 生成标题卡（可选）→ ffmpeg 拼接/裁剪/转码 → 最终 mp4 带音轨占位 → 证书/来源清单（JSON）
+- 专用智能体：Story Manager（编排器：创建项目/章节/镜头清单，分叉，合并）、Outline Agent（节拍与结构）、Shot Director（从节拍/场景生成镜头清单）、Asset Manager（从文本创建/复用资产）、Consistency Agent（检查资产与镜头使用，报告不匹配，只读建议）、Gen Agent（图像/视频生成作业与提示词编译）、Trailer Agent（节拍选择与预告片编译）、Exporter（导出格式 + `present()`）。
+- 工具面通过 `ctx.tools.register` 注册，工具名采用 snake_case，如 `capture_chapter_*`、`capture_shot_*`、`capture_asset_*`（ADR-018）。
+- 重推理使用子智能体以保持主上下文精简（按实践 #28 — 后续）。
+- 阶段 1 不另行注册 DSH 技能/智能体预设（ADR-005 禁止新增会话事件类型；Q5 留待 S3 验证是否可注册技能，否则用 `systemPrompt.section()` + 工具 `description` 让模型感知 `capture.*` 工具）。
 
-提供商接口与模拟实现位于后续阶段，阶段 1 不做生成。
+### 4.2 上下文与记忆
 
----
+- 项目是全局实体（跨会话），存储在主机 `ctx.storageDomain` 的 `capture` 域；会话仅存项目指针 + 智能体上下文 + 聊天（ADR-003）。
+- 分叉 = 深克隆项目树（新 id 带 `origin` 指针）；撤销 = 基于日志回退最近 N 个操作（提案；存储层，阶段 1 不实现）。
 
-## 8. 智能体预设 / 技能（阶段 1 决定）
+### 4.3 多Agent 协作与编排
 
-阶段 1 通过 `ctx.systemPrompt.section("capture", ...)` + 工具 `description` 让模型感知 `capture.*` 工具，不另行注册 DSH 技能/智能体预设（ADR-005 禁止新增会话事件类型；Q5 留待 S3 验证是否可注册技能）。
+- 差异优先编辑（diff-first edits）：智能体绝不静默覆盖；提议的变更（创建/更新/删除）以差异形式展示，并提供接受/拒绝/修改。
+- 提议/应用工具对（propose/apply tool pair）：`capture_propose_change` 创建“待处理提案”，返回 `proposalId`；UI 渲染差异；`capture_apply_proposal(proposalId)` 持久化（阶段 1+）。
 
----
+### 4.4 预留接口与占位
 
-## 9. 性能与 UX
-
-- 所有长操作作为作业；UI 通过轮询/订阅读取进度（阶段 3）。
-- 避免轮询智能体/状态；使用作业状态。
-- 重列表：稍后通过 DSH 分块列表处理；媒体缩略图通过文件引用懒加载。
+- 技能注册 API（Q5 待验证）：插件能否注册技能/智能体预设，否则使用 `systemPrompt.section()` + 工具描述。
+- 子智能体调度预留；多Agent 协作编排细节待阶段 2 实现时补全。
 
 ---
 
-## 10. 安全与隐私
+## 5. UI 与对话联动架构（阶段 2+ 待扩展）
+
+### 5.1 客户端侧 UI 槽位
+
+- `shell.overlay`（`kind: list, scope: root`）：右侧 Capture工作室面板，右侧常驻。宽侧板的具体布局待阶段 2 实现 `StudioPanel` 时确认（ADR-012）。
+- `sidebar.panellist`（`kind: list, scope: root`）：左侧全局导航 "Capture" 图标入口，点击打开/关闭 Capture工作室面板。
+- `conversation.composer.dock`（`kind: list, scope: session`）：底部徽章 "Capture N project(s)"，轻量状态入口。
+- `settings.general.item`（阶段 2+）：Capture 提供商/配置页面。
+
+### 5.2 UI 与对话联动
+
+- 联动开关（默认关闭）：打开后，对话框讨论中的镜头/章节会自动高亮并跳转到对应行；智能体提议的编辑在对应行显示“待审核”徽章。
+- 智能体建议条（可折叠，显示差优先编辑建议，点击查看 diff 并接受/拒绝）。
+- 章节切换器（下拉选择器）、项目/资产标签页切换。
+
+### 5.3 客户端组件预留
+
+- `CapturePanel`（composer dock 徽章）：React 函数组件，`useState({ projects, error, loading })`，`useEffect` 挂载时 `fetch("/api/capture/state")`，通过 `safeJson` 解析。
+- `StudioPanel`（右侧 Capture工作室面板）：`shell.overlay` 注册，固定宽度，右侧常驻。左侧为 Capture工作室左侧区（项目/资产列表），右侧为 Capture工作室右侧故事板（故事大纲 + 世界观与人物设定 + 分镜脚本表格）。
+
+### 5.4 预留占位
+
+- 资产详情弹出对话框、空状态提示、资产横向 Tab（角色/场景/物品）、分镜脚本表格横向滑动与行内编辑等 UI 细节，设计见 `02-PRODUCT-DESIGN.md` / `03-UI-DESIGN.md`，代码待阶段 1 扩展时实现。
+
+---
+
+## 6. 数据与存储架构（阶段 1 已实现，持续扩展）
+
+### 6.1 存储域设计
+
+- 域名 `capture`，版本 1，表 `projects`、`chapters`、`shots`、`assets`、`generations`、`trailers`。
+- 阶段 1 因插件包不可将 `@deepseek-ai/dsh-storage-domain` 及 `zod` 作为 pnpm 依赖（ADR-019），内联了 `defineDomain` / `domainTable` 微型构建器，并使用 passthrough schema `{ parse: (v) => v }`，让 `storageDomain.loadAll()` / `put()` 先能工作；真正的 Zod 校验留待后续阶段补上。
+- 阶段 1 仅操作 `projects` 表：`put(id, { name, genre, logline, createdAt, updatedAt })`、`entries()` 遍历。
+- 记录 ID 用 `crypto.randomUUID()`，时间戳用 `Date.now()`。
+
+### 6.2 实体与字段
+
+每个实体通用字段：`id`、`name`、`genre`、`logline`、`createdAt`、`updatedAt`。
+
+- `Project { id, name, genre, logline, audience?, tone?, stylePackId?, createdAt, updatedAt, chapters: [ChapterId], assets: [AssetId] }`
+- `Chapter { id, projectId, index, title, synopsis, beats[], status, text(md), wordCount }`
+- `Shot { id, projectId, chapterId?, sceneId?, order, durationSec, type, description, dialogue?, camera, transition?, audio?, sfx?, music?, assetBindings, generation?, variants? }`
+- `Asset { id, projectId, kind: character|prop|location|stylePack, name, description, referenceImages: [fileRef], tags[], traits, identityLockPrompt (generated), version, createdAt, updatedAt, usedBy: [{ shotId, role }] }`
+- `Generation { id, kind, sourceShotId?, assetId?, status, progress, startedAt, finishedAt, params, outputs: [fileRef], provenance }`（阶段 2+）
+- `Trailer { id, projectId, style, durationTargetSec, beats, titleCards[], status, outputs: [mp4Ref], progress }`（阶段 3+）
+
+### 6.3 全局存储与会话指针
+
+- **按会话 vs 全局**：项目是全局实体（跨会话），媒体文件是全局的。会话只持有当前“工作集”指针 + 智能体上下文 + 聊天（ADR-003）。
+- 存储路径由 DSH profile 配置的存储后端决定，插件不自建文件树，也不直接读写存储文件（ADR-010）。
+- 媒体：通过 DSH 交付物/引用服务提供文件引用，具体路径由存储后端决定。
+
+### 6.4 事件溯源考虑
+
+按 DSH 实践：会话日志是事实来源。项目位于主机存储（域存储），不在会话日志中。为了让智能体重放和智能体分叉工作安全：
+
+- 插件存储是项目的单一事实来源（SSOT）；会话仅引用 projectId。
+- 会话可以分叉项目 → 新 projectId（插件存储中深拷贝）或“分支”指针。每个会话的插件存储变更记录为 Operation 记录（日志），以便撤销可用。
+- 生成结果在聊天中作为插件记录引用；避免新增会话事件类型（实践 #16 说不要追加 `type: new`）。改用现有 `assistant/message` + `tool/result` 事件；在主机存储 Generation 数据库行。智能体通过工具结果看到。
+
+---
+
+## 7. 安全与隐私
 
 - 除非配置了提供商 + 用户选择加入，否则无外部调用。
 - 所有媒体本地；生成提示词可能包含发送给提供商的用户内容（显式）。
 - 角色：会话中任何智能体可调用工具；宿主存储全局 → 智能体可读取所有项目（v1 可接受；后续可能限定范围）。
 - API 密钥仅通过环境变量（`DSH_CAPTURE_*`），绝不在存储中。
+- 路由信任门限：`trust gate` 拒绝跨站与 `Origin: null` 请求，缺席 `Origin`（桌面壳/非浏览器客户端）放行。
 
 ---
 
-## 11. 测试
+## 8. 测试策略
 
 - 宿主冒烟：临时 `DSH_HOME`；创建项目/章节/镜头/资产；模拟生成；导出；重启读取。
 - 客户端冒烟：工厂渲染（桩 React/fetch）按 dsh-archived 的 client-smoke。
 - 兼容性检查：读取 app.asar 并断言服务 API（已对 `storage`/`storageDomain`/`webServer`/`tools`/`systemPrompt` 及 `/api/capture/*` 路由通过 `cordis_inspect_query` 验证）。
 - 端到端（真实 `dsh web`）：阶段 1 已手动通过（安装 → 工具可见 → 路由 200 → 客户端面板渲染）。
-
-`tests/` 目录当前为空，待补充 `host-smoke.mjs`、`client-smoke.mjs`、`compat-check.mjs`。
+- `tests/` 目录当前为空，待补充 `host-smoke.mjs`、`client-smoke.mjs`、`compat-check.mjs`。
 
 ---
 
-## 12. 已知问题与修复记录（阶段 1）
+## 9. 已知问题与修复记录（阶段 1）
 
 | ID | 问题 | 影响 | 修复 | 提交 |
 |---|---|---|---|---|
@@ -227,12 +212,9 @@ UI/Agent
 
 ---
 
-## 13. 扩展点摘要（阶段 1 已验证子集）
+## 10. 扩展点预留
 
-- 槽位：`conversation.composer.dock`（`kind: list, scope: session`，`id: capture, order: 4`）
-- 工具：`capture_project_create`、`capture_project_list`（`ctx.tools.register`）
-- 存储：`ctx.storageDomain.open("capture")` / `.get("capture")` / `.table("projects")`
-- 路由：`ctx.webServer.register({ kind: "exact", path: "/api/capture/*" })`
-- 提示词：`ctx.systemPrompt.section({ name: "capture", order: 100, text })`
-
-阶段 2+ 拟追加：`sidebar.workspaces.session.menu.item`、`shell.overlay`、`settings.general.item`、`conversation.input.dock`；`capture_project.get/update/delete`、`capture_chapter.*`、`capture_shot.*`、`capture_asset.*` 等工具与路由。
+- 槽位：`sidebar.workspaces.session.menu.item`、`shell.overlay`（已注册框架，宽侧板布局待阶段 2 确认）、`settings.general.item`、`conversation.input.dock`。
+- 工具：`capture_project.get/update/delete`、`capture_chapter.*`、`capture_shot.*`、`capture_asset.*`、`capture_propose_change`、`capture_apply_proposal` 等。
+- 路由：`GET /api/capture/projects/:id/state`、`POST /api/capture/chapters`、`POST /api/capture/shots`、`POST /api/capture/assets`、`POST /api/capture/generations`、`GET /api/capture/generations/:id`、`POST /api/capture/trailers`、`POST /api/capture/exports`。
+- 提示词：`ctx.systemPrompt.section({ name: "capture", order: 100, text })`。

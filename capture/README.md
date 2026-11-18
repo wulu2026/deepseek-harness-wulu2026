@@ -12,7 +12,7 @@
 
 | 形态 | DSH 0.2.2-alpha.2 **Bundle 插件**（Host + Client 双半边） |
 
-| 状态 | **概念 / 设计阶段**（尚未写代码； awaiting PRD sign-off） |
+| 状态 | **阶段 1 骨架已完成**（Host/Client 最小骨架代码已完成，并安装到 `desktop` profile 冒烟通过） |
 
 | 仓库（workspace） | `capture/`（本目录） |
 
@@ -128,7 +128,7 @@ capture/
 
 │  └─ PROGRESS.md
 
-├─ (Phase 1 起才会出现) package.json, cordis.patch.yml, index.js, client.js, locale/ ...
+├─ package.json, cordis.patch.yml, index.js, client.js, locale/（阶段 1 骨架已完成）
 
 └─ (Phase 2 起) 生成器、存储schema、tests
 
