@@ -11,7 +11,7 @@
 | 阶段 | 目标 | 状态 |
 |---|---|---|
 | 阶段 0 | 技术验证（S1 存储、S2 客户端—宿主数据流；S3/S4/S5 待做） | 已完成 S1/S2 |
-| 阶段 1 | MVP-A：最小骨架（Host/Client 框架、项目 CRUD 工具与路由、composer dock 徽章、sidebar 入口、shell.overlay 框架） | 已完成 |
+| 阶段 1 | MVP-A：最小骨架（Host/Client 框架、项目 CRUD 工具与路由、composer dock 徽章、sidebar 入口、rightbar 右侧侧边栏页面框架） | 已完成 |
 | 阶段 1+ | 扩展实现：章节/镜头/资产 CRUD 工具与路由、客户端面板扩展（资产网格、分镜表格、顶部栏、建议条等） | 待定 |
 | 阶段 2 | MVP-B：图像生成（模拟 + HTTP 提供商）、身份锁定、来源追溯 | 待定 |
 | 阶段 3 | MVP-C：视频生成、预告片编译（ffmpeg）、`present()` 交付物 | 待定 |
@@ -68,7 +68,7 @@
 - 三个槽位注册：
   - `conversation.composer.dock`（`id: capture, order: 4`）：`CapturePanel` 渲染底部徽章 "Capture N project(s)"。
   - `sidebar.panellist`（`id: capture.open, order: 450, label: "Capture"`）：`MenuEntry` 渲染左侧全局导航图标，点击打开/关闭 Capture工作室面板。
-  - `shell.overlay`（`id: capture.overlay, order: 50`）：`StudioPanel` 渲染右侧 Capture工作室面板（当前代码中 `StudioPanel` 仅实现项目列表 + 新建表单，资产网格、分镜表格等 UI 待阶段 1+ 扩展）。
+  - `rightbar` / `sidebar.right.pane.tab`（`key: capture`）：`StudioPanel` 渲染右侧 Capture工作室页面（当前代码中 `StudioPanel` 仅实现项目列表 + 新建表单，资产网格、分镜表格等 UI 待阶段 1+ 扩展）。
 - `safeJson` 响应解析（P1 防护）：对非 JSON 响应返回 `{ ok: false, error: "HTTP_<status>", message: <前 200 字符> }`，避免 `res.json()` 解析纯文本崩溃客户端。
 - 状态管理：`useState({ projects, error, loading })`；`useEffect` 挂载时 `fetch("/api/capture/state", { credentials: "same-origin" })`，通过 `safeJson` 解析，卸载时置 `active = false` 防止状态更新。
 
@@ -100,7 +100,7 @@
 
 | 步骤 | 内容 | 状态 |
 |---|---|---|
-| 1 | Capture工作室面板框架（右侧常驻面板）：Capture工作室左侧区（项目/资产列表）+ Capture工作室右侧故事板（故事大纲 + 世界观与人物设定 + 分镜脚本表格），顶部栏：联动开关 + 章节切换器 + 项目/资产标签 | 进行中 |
+| 1 | Capture工作室页面框架（右侧侧边栏工作区页面）：Capture工作室左侧区（项目/资产列表）+ Capture工作室右侧故事板（故事大纲 + 世界观与人物设定 + 分镜脚本表格），顶部栏：联动开关 + 章节切换器 + 项目/资产标签 | 进行中 |
 | 2 | Capture工作室左侧区：项目列表（名称、类型、一句话梗概、创建时间、最后修改时间）+ 新建项目弹窗 | 待定 |
 | 3 | Capture工作室左侧区：资产网格卡片（角色/场景/物品三类切换）+ 新建资产弹窗（名称、描述） | 待定 |
 | 4 | Capture工作室右侧故事板：故事大纲 / 剧情摘要显示 | 待定 |

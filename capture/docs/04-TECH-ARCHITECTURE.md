@@ -63,8 +63,8 @@ Capture 是 DeepSeek Harness (DSH) 的一个 **bundle 插件**，面向作家/�
   - 返回 `{ inject: ["slots"], apply(ctx) {...} }`，由 `cordis-client-runner` 激活为客户端 Cordis 插件。
   - `apply(ctx)` 注册三个槽位：
     - `conversation.composer.dock`（`kind: list, scope: session`）：底部徽章 "Capture N project(s)"，轻量状态入口。
-    - `sidebar.panellist`（`kind: list, scope: root`）：左侧全局导航 "Capture" 图标，点击打开/关闭 Capture工作室面板。
-    - `shell.overlay`（`kind: list, scope: root`）：右侧 Capture工作室面板，右侧常驻。
+    - `sidebar.panellist`（`kind: list, scope: root`）：左侧全局导航 "Capture" 图标，点击打开/关闭右侧 Capture工作室页面。
+    - `rightbar` / `sidebar.right.pane.tab`（`kind: keyed, scope: session`）：右侧侧边栏工作区页面，key 为 `capture`，渲染 Capture工作室页面，随 DSH 窗口缩放，中间对话框保持可见。
 
 ### 2.5 区域设置与元数据
 
@@ -121,8 +121,8 @@ Capture 是 DeepSeek Harness (DSH) 的一个 **bundle 插件**，面向作家/�
 
 ### 5.1 客户端侧 UI 槽位
 
-- `shell.overlay`（`kind: list, scope: root`）：右侧 Capture工作室面板，右侧常驻。宽侧板的具体布局待阶段 2 实现 `StudioPanel` 时确认（ADR-012）。
-- `sidebar.panellist`（`kind: list, scope: root`）：左侧全局导航 "Capture" 图标入口，点击打开/关闭 Capture工作室面板。
+- `rightbar` / `sidebar.right.pane.tab`（`kind: keyed, scope: session`）：右侧 Capture工作室页面，key 为 `capture`，右侧侧边栏工作区页面，随 DSH 窗口缩放，中间对话框保持可见（ADR-012）。
+- `sidebar.panellist`（`kind: list, scope: root`）：左侧全局导航 "Capture" 图标入口，点击打开/关闭右侧 Capture工作室页面。
 - `conversation.composer.dock`（`kind: list, scope: session`）：底部徽章 "Capture N project(s)"，轻量状态入口。
 - `settings.general.item`（阶段 2+）：Capture 提供商/配置页面。
 
@@ -131,11 +131,12 @@ Capture 是 DeepSeek Harness (DSH) 的一个 **bundle 插件**，面向作家/�
 - 联动开关（默认关闭）：打开后，对话框讨论中的镜头/章节会自动高亮并跳转到对应行；智能体提议的编辑在对应行显示“待审核”徽章。
 - 智能体建议条（可折叠，显示差优先编辑建议，点击查看 diff 并接受/拒绝）。
 - 章节切换器（下拉选择器）、项目/资产标签页切换。
+- `rightbar` scope 为 `session`，与中间 `conversation` 共享当前会话状态，支持对话→右侧工作室（自动高亮/跳转）和右侧工作室→对话（编辑更新后反射到对话框）的双向联动。
 
 ### 5.3 客户端组件预留
 
 - `CapturePanel`（composer dock 徽章）：React 函数组件，`useState({ projects, error, loading })`，`useEffect` 挂载时 `fetch("/api/capture/state")`，通过 `safeJson` 解析。
-- `StudioPanel`（右侧 Capture工作室面板）：`shell.overlay` 注册，固定宽度，右侧常驻。左侧为 Capture工作室左侧区（项目/资产列表），右侧为 Capture工作室右侧故事板（故事大纲 + 世界观与人物设定 + 分镜脚本表格）。
+- `StudioPanel`（右侧 Capture工作室页面）：`sidebar.right.pane.tab` 注册，key 为 `capture`，右侧侧边栏页面。左侧为 Capture工作室左侧区（项目/资产列表），右侧为 Capture工作室右侧故事板（故事大纲 + 世界观与人物设定 + 分镜脚本表格）。
 
 ### 5.4 预留占位
 
@@ -201,7 +202,7 @@ Capture 是 DeepSeek Harness (DSH) 的一个 **bundle 插件**，面向作家/�
 
 ## 10. 扩展点预留
 
-- 槽位：`sidebar.workspaces.session.menu.item`、`shell.overlay`（已注册框架，宽侧板布局待阶段 2 确认）、`settings.general.item`、`conversation.input.dock`。
+- 槽位：`sidebar.workspaces.session.menu.item`、`rightbar` / `sidebar.right.pane.tab`（已注册框架，右侧侧边栏工作区页面，随窗口缩放）、`settings.general.item`、`conversation.input.dock`。
 - 工具：`capture_project.get/update/delete`、`capture_chapter.*`、`capture_shot.*`、`capture_asset.*`、`capture_propose_change`、`capture_apply_proposal` 等。
 - 路由：`GET /api/capture/projects/:id/state`、`POST /api/capture/chapters`、`POST /api/capture/shots`、`POST /api/capture/assets`、`POST /api/capture/generations`、`GET /api/capture/generations/:id`、`POST /api/capture/trailers`、`POST /api/capture/exports`。
 - 提示词：`ctx.systemPrompt.section({ name: "capture", order: 100, text })`。

@@ -70,11 +70,11 @@
 - 状态：已接受
 - 决策：接口化；模拟/HTTP/本地提供商可插；不内嵌密钥。
 
-## ADR-012 — 先覆盖式侧板，后主面板
+## ADR-012 — 右侧侧边栏工作区页面（rightbar），保留侧边栏轻量入口
 
-- 状态：已接受（槽位能力已由 S2 确认，2026-11-11；布局待阶段 2 实现）
-- 决策：v1 中工作室作为 `shell.overlay` 宽侧板。
-- 验证：`cordis_inspect_query Slots.listSubTree` 确认 `shell.overlay` 为 `kind: list, scope: root`，注册需 `id`，`replaceRisk: none`，用途为 frame-wide floating layer。宽侧板的具体布局待在阶段 2 实现 `StudioPanel` 时确认。
+- 状态：已接受（槽位能力已由 S2 确认，2026-11-11；右侧侧边栏布局待阶段 1+ 实现）
+- 决策：Capture 工作室作为右侧侧边栏工作区页面（`rightbar` / `sidebar.right.pane.tab`，key 为 `capture`），通过左侧全局导航 `sidebar.panellist` 的 "Capture" 图标打开/关闭。中间对话框（`conversation`）保持可见，右侧侧边栏随 DSH 窗口缩放。
+- 验证：`cordis_inspect_query Slots.listSubTree` 确认 `rightbar` 为 `kind: single, scope: root`，子槽位 `rightbar.session` 为 `kind: single, scope: session`，`sidebar.right.pane.tab` 为 `kind: keyed, scope: session`，keyDomain 为 open，未被占用。右侧侧边栏页面的具体布局待在阶段 1+ 实现 `StudioPanel` 时确认。
 
 ## ADR-013 — ffmpeg 兜底合成预告片
 
