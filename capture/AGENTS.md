@@ -4,4 +4,3 @@
 - 规格先行：修改代码之前，先确认技术方案（更新 `capture/docs/04-TECH-ARCHITECTURE.md`、`capture/docs/05-TECH-IMPLEMENTATION.md` 和 `capture/docs/07-DECISIONS.md`）。
 - 保持整洁空格规则：文件末尾一个换行符，提交文件中不得有尾随空格。
 - 未经用户明确请求，不得推送。
-- 有不明确、不确定的地方，要向用户提问并确认；不知道的就说不知道，不要乱写。
