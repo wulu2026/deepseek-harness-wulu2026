@@ -297,17 +297,21 @@ window.__ModuleLoader__.load({
     // ---- Sidebar menu entry (sidebar.panellist) ----
     //
     // Clicking this entry opens the Capture Studio Tab in the native right
-    // sidebar via sidebarRight.openTab("capture"). All service access is
-    // defensively guarded so the plugin does not crash if a service is not
-    // available in the current profile.
-    function MenuEntry() {
+    // sidebar via sidebarRight.openTab("capture").
+    function MenuEntry(props) {
+      const { ctx } = props; // 从 props 接收 ctx
+
       const handleOpen = () => {
-        const sidebarRight =
-          typeof ctx.get === "function" ? ctx.get("sidebarRight") : undefined;
+        // 防御性获取，万一服务没加载也不至于报错崩溃
+        const sidebarRight = ctx.get?.("sidebarRight");
+        console.log("[capture] handleOpen: ctx.get('sidebarRight') =", sidebarRight ? "yes" : "undefined");
         if (sidebarRight && typeof sidebarRight.openTab === "function") {
-          sidebarRight.openTab("capture");
+          // openTab 接收的是 tab kind，不是 tab id
+          console.log("[capture] handleOpen: calling sidebarRight.openTab('capture')");
+          sidebarRight.openTab("capture-studio-tab");
+          console.log("[capture] handleOpen: sidebarRight.openTab('capture') returned, no error");
         } else {
-          console.warn("[capture] sidebarRight service or openTab method not available");
+          console.warn("[capture] handleOpen: sidebarRight service not available. Did you add the dependency in package.json?");
         }
       };
 
@@ -334,8 +338,10 @@ window.__ModuleLoader__.load({
 
     return {
       // only slots are required in Phase 1
-      inject: ["slots"],
+      inject: ["slots", "sidebarRightTabs"],
       apply(ctx) {
+        console.log("[capture] apply() called");
+        console.log("[capture] ctx.services:", Object.keys(ctx).filter(k => k.startsWith("sidebar") || k === "slots" || k === "inject").join(", "));
         ctx.slots.inject("conversation.composer.dock", () =>
           ctx.slots.register(
             {
@@ -355,33 +361,47 @@ window.__ModuleLoader__.load({
               order: 450,
               label: "Capture",
             },
-            MenuEntry,
+            (props) => h(MenuEntry, { ...props, ctx }),
           ),
         );
 
-        // Double registration for right sidebar workspace page:
-        //
-        // 1. Register Tab type via sidebarRightTabs service (defensive).
-        //    ctx.inject may not exist in all DSH versions; guard with typeof.
-        if (typeof ctx.inject === "function") {
-          ctx.inject(["sidebarRightTabs"], (sidebarRightTabs) => {
-            if (sidebarRightTabs && typeof sidebarRightTabs.register === "function") {
-              const tabDefinition = {
-                id: "capture-studio-tab",
-                kind: "capture",
-                title: "Capture",
-                priority: "extension",
-                keepMounted: true,
-              };
-              ctx.effect(() => sidebarRightTabs.register(tabDefinition), "capture:sidebar-tab-type");
-            } else {
-              console.warn("[capture] sidebarRightTabs service or register method not available");
-            }
-          });
-        }
+        // Register Tab type via sidebarRightTabs service.
+        // NOTE: must be asynchronous/queued. Services may not be ready at apply() time,
+        // so use ctx.inject() so DSH delivers the service when it is loaded.
+        // Synchronous ctx.get() here would race with service loading and silently
+        // fail, so the tab type is never registered.
+        ctx.inject(["sidebarRightTabs"], (injected) => {
+          console.log("[capture] sidebarRightTabs received:", injected ? "yes" : "undefined");
+          console.log("[capture] typeof sidebarRightTabs =", typeof injected);
+          console.log("[capture] sidebarRightTabs keys:", Object.keys(injected || {}));
+          const sidebarRightTabs = injected.get?.("sidebarRightTabs") || injected.sidebarRightTabs;
+          if (sidebarRightTabs && typeof sidebarRightTabs.register === "function") {
+            console.log("[capture] typeof sidebarRightTabs.register =", typeof sidebarRightTabs.register);
+            const tabDefinition = {
+              id: "capture-studio-tab",
+              kind: "capture",
+              title: () => "Capture",
+              priority: "extension",
+              keepMounted: true,
+            };
+            const dispose = sidebarRightTabs.register(tabDefinition);
 
-        // 2. Register Tab body to keyed slot.
-        //    key MUST strictly equal tabDefinition.id above.
+            // 推荐：把注销器放进 ctx.effect，插件卸载时自动清理
+            ctx.effect(() => dispose, "capture:sidebar-tab-type");
+
+            console.log("[capture] registered tabDefinition:", JSON.stringify(tabDefinition));
+            console.log("[capture] tab registered OK");
+          } else {
+            console.warn("[capture] sidebarRightTabs service or register method not available");
+            console.log("[capture] ctx.get('sidebarRightTabs') result:", sidebarRightTabs);
+            console.log("[capture] typeof sidebarRightTabs:", typeof sidebarRightTabs);
+            console.log("[capture] typeof sidebarRightTabs.register:", typeof sidebarRightTabs?.register);
+            console.log("[capture] sidebarRightTabs keys:", Object.keys(sidebarRightTabs || {}));
+          }
+        });
+
+        // Register Tab body to keyed slot.
+        // key MUST strictly equal tabDefinition.id above.
         ctx.slots.inject("sidebar.right.pane.tab", () =>
           ctx.slots.register(
             {
