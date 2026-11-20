@@ -308,7 +308,7 @@ window.__ModuleLoader__.load({
         if (sidebarRight && typeof sidebarRight.openTab === "function") {
           // openTab 接收的是 tab kind，不是 tab id
           console.log("[capture] handleOpen: calling sidebarRight.openTab('capture')");
-          sidebarRight.openTab("capture-studio-tab");
+          sidebarRight.openTab("capture");
           console.log("[capture] handleOpen: sidebarRight.openTab('capture') returned, no error");
         } else {
           console.warn("[capture] handleOpen: sidebarRight service not available. Did you add the dependency in package.json?");
@@ -378,7 +378,7 @@ window.__ModuleLoader__.load({
           if (sidebarRightTabs && typeof sidebarRightTabs.register === "function") {
             console.log("[capture] typeof sidebarRightTabs.register =", typeof sidebarRightTabs.register);
             const tabDefinition = {
-              id: "capture-studio-tab",
+              id: "capture",
               kind: "capture",
               title: () => "Capture",
               priority: "extension",
@@ -406,7 +406,7 @@ window.__ModuleLoader__.load({
           ctx.slots.register(
             {
               name: "sidebar.right.pane.tab",
-              key: "capture-studio-tab",
+              key: "capture",
             },
             StudioPanel,
           ),
