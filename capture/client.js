@@ -5,6 +5,8 @@ window.__ModuleLoader__.load({
     const React = require("react");
     const h = React.createElement; // explicit element factory (no JSX step)
     const { useState, useEffect, useCallback } = React;
+    // DSH Web Shell 平台种子模块，运行时始终可 require，无需 package.json 声明（ADR-021）。
+    const { Button, Input, Modal, Tag } = require("@deepseek-ai/dsh-client-ui-primitives");
 
     // Safe JSON parsing for fetch responses. Returns { ok, error?, message? } envelope.
     async function safeJson(response) {
@@ -77,6 +79,7 @@ window.__ModuleLoader__.load({
         loading: true,
       });
       const [newName, setNewName] = useState("");
+      const [selectedProjectId, setSelectedProjectId] = useState(null);
 
       const fetchProjects = useCallback(async () => {
         try {
@@ -146,37 +149,77 @@ window.__ModuleLoader__.load({
           },
         },
         [
-          // Header
+          // Header - 1.2 阶段顶部栏占位：联动开关 + 章节切换器 + 项目/资产标签
           h(
             "div",
             {
               style: {
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "space-between",
-                padding: "0 0 16px 0",
-                borderBottom:
-                  "1px solid var(--dsw-alias-stroke-muted, #e5e5e5)",
+                gap: "10px",
+                padding: "0 0 12px 0",
+                borderBottom: "1px solid var(--dsw-alias-stroke-muted, #e5e5e5)",
               },
             },
             [
+              // 联动开关（占位，阶段 1 仅视觉反馈，不做实际高亮跳转逻辑）
               h(
                 "span",
                 {
                   style: {
-                    fontWeight: 600,
-                    fontSize: 16,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    padding: "4px 10px",
+                    border: "1px solid var(--dsw-alias-stroke-default, #ccc)",
+                    borderRadius: "6px",
+                    fontSize: 12,
                     color: "var(--dsw-alias-fg-default, #111)",
+                    cursor: "pointer",
+                    background: "var(--dsw-alias-bg-surface, #fff)",
+                  },
+                  onClick: () => {
+                    // 阶段 1 占位：仅视觉反馈
                   },
                 },
-                "Capture 工作室",
+                [
+                  h("span", { style: { width: "8px", height: "8px", borderRadius: "4px", background: linkOnState() ? "var(--dsw-alias-accent-default, #0066cc)" : "var(--dsw-alias-stroke-muted, #e5e5e5)" } }),
+                  h("span", null, "联动：关"),
+                ],
               ),
+              // 章节切换器（原生 <select>，阶段 1 静态选项）
+              h(
+                "select",
+                {
+                  value: chapterState() || "第 1 章",
+                  onChange: (e) => {
+                    // 阶段 1 占位：不持久化章节选择
+                  },
+                  style: {
+                    padding: "6px 10px",
+                    border: "1px solid var(--dsw-alias-stroke-default, #ccc)",
+                    borderRadius: "6px",
+                    fontSize: 13,
+                    color: "var(--dsw-alias-fg-default, #111)",
+                    background: "var(--dsw-alias-bg-surface, #fff)",
+                    cursor: "pointer",
+                  },
+                },
+                [
+                  h("option", { value: "第 1 章" }, "第 1 章"),
+                  h("option", { value: "第 2 章" }, "第 2 章"),
+                  h("option", { value: "第 3 章" }, "第 3 章"),
+                ],
+              ),
+              // 项目 / 资产 标签切换（使用 primitives Tag 作为视觉标签）
+              h(Tag, null, "项目"),
+              h(Tag, null, "资产"),
             ],
           ),
-          // Body
+          // Body - 左右两列
           h(
             "div",
-            { style: { flex: 1 } },
+            { style: { flex: 1, display: "flex", flexDirection: "column" } },
             [
               state.loading
                 ? h("div", null, "加载中…")
@@ -189,110 +232,255 @@ window.__ModuleLoader__.load({
                     },
                   }, state.error)
                 : null,
+              // 左侧区：项目列表（2.1 阶段样式：名称加粗、类型 Tag、梗概、时间、悬停/选中）
               h(
-                "h3",
+                "div",
                 {
                   style: {
-                    margin: "0 0 12px 0",
-                    fontSize: 16,
-                    color: "var(--dsw-alias-fg-default, #111)",
-                  },
-                },
-                "项目",
-              ),
-              // Create form
-              h(
-                "form",
-                {
-                  onSubmit: handleCreate,
-                  style: {
+                    flex: "0 0 260px",
                     display: "flex",
-                    gap: 8,
-                    marginBottom: 16,
-                    alignItems: "center",
+                    flexDirection: "column",
+                    overflowY: "auto",
+                    borderRight: "1px solid var(--dsw-alias-stroke-muted, #e5e5e5)",
+                    padding: "12px",
+                    background: "var(--dsw-alias-bg-layer-default, #fafafa)",
                   },
                 },
                 [
-                  h("input", {
-                    type: "text",
-                    placeholder: "新建项目名称",
-                    value: newName,
-                    onChange: (e) => setNewName(e.target.value),
+                  h("h3", {
                     style: {
-                      flex: 1,
-                      padding: "6px 10px",
-                      border:
-                        "1px solid var(--dsw-alias-stroke-default, #ccc)",
-                      borderRadius: "6px",
-                      fontSize: 14,
+                      margin: "0 0 12px 0",
+                      fontSize: 15,
+                      color: "var(--dsw-alias-fg-default, #111)",
                     },
-                  }),
+                  }, "项目"),
                   h(
-                    "button",
+                    "ul",
                     {
-                      type: "submit",
-                      style: {
-                        padding: "6px 14px",
-                        background: "var(--dsw-alias-accent-bg, #0066cc)",
-                        color: "#fff",
-                        border: "none",
-                        borderRadius: "6px",
-                        cursor: "pointer",
-                        fontSize: 14,
-                      },
+                      style: { listStyle: "none", padding: 0, margin: 0 },
                     },
-                    "创建",
+                    state.projects.map((p) => {
+                      const selected = selectedProjectId === p.id;
+                      return h(
+                        "li",
+                        {
+                          key: p.id,
+                          onClick: () => setSelectedProjectId(p.id),
+                          style: {
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                            padding: "10px 12px",
+                            borderBottom: "1px solid var(--dsw-alias-stroke-muted, #f0f0f0)",
+                            fontSize: 14,
+                            color: "var(--dsw-alias-fg-default, #111)",
+                            background: selected
+                              ? "var(--dsw-alias-bg-accent, #eef6ff)"
+                              : "var(--dsw-alias-bg-surface, #fff)",
+                            cursor: "pointer",
+                          },
+                        },
+                        [
+                          h(
+                            "div",
+                            {
+                              style: {
+                                flex: 1,
+                                minWidth: 0,
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "2px",
+                              },
+                            },
+                            [
+                              h(
+                                "span",
+                                {
+                                  style: {
+                                    fontWeight: 600,
+                                    color: "var(--dsw-alias-fg-default, #111)",
+                                    overflow: "hidden",
+                                    whiteSpace: "nowrap",
+                                    textOverflow: "ellipsis",
+                                  },
+                                },
+                                p.name || "未命名项目",
+                              ),
+                              h(
+                                "span",
+                                {
+                                  style: {
+                                    fontSize: 12,
+                                    color: "var(--dsw-alias-fg-muted, #888)",
+                                    overflow: "hidden",
+                                    whiteSpace: "nowrap",
+                                    textOverflow: "ellipsis",
+                                  },
+                                },
+                                p.genre ? `类型：${p.genre}` : "类型：—",
+                              ),
+                            ],
+                          ),
+                          h(Tag, null, p.genre || "未分类"),
+                          h(
+                            "span",
+                            {
+                              style: {
+                                flex: 1,
+                                minWidth: 0,
+                                fontSize: 13,
+                                color: "var(--dsw-alias-fg-muted, #888)",
+                                overflow: "hidden",
+                                whiteSpace: "nowrap",
+                                textOverflow: "ellipsis",
+                                paddingLeft: "12px",
+                              },
+                            },
+                            p.logline ? p.logline : "—",
+                          ),
+                          h(
+                            "span",
+                            {
+                              style: {
+                                fontSize: 12,
+                                color: "var(--dsw-alias-fg-subtle, #666)",
+                                whiteSpace: "nowrap",
+                              },
+                            },
+                            p.createdAt ? new Date(p.createdAt).toLocaleString() : "",
+                          ),
+                        ],
+                      );
+                    }),
                   ),
+                  state.projects.length === 0
+                    ? h("p", {
+                        style: {
+                          color: "var(--dsw-alias-fg-muted, #888)",
+                          margin: 0,
+                          padding: "12px 0",
+                        },
+                      }, "暂无项目。使用上方表单创建一个项目。")
+                    : null,
                 ],
               ),
-              // Project list
+              // 右侧故事板（占位）
               h(
-                "ul",
+                "div",
                 {
-                  style: { listStyle: "none", padding: 0, margin: 0 },
+                  style: {
+                    flex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    overflowY: "auto",
+                    padding: "12px",
+                  },
                 },
-                state.projects.map((p) =>
-                  h(
-                    "li",
-                    {
-                      key: p.id,
-                      style: {
-                        padding: "8px 12px",
-                        borderBottom:
-                          "1px solid var(--dsw-alias-stroke-muted, #f0f0f0)",
-                        fontSize: 14,
-                        color: "var(--dsw-alias-fg-default, #111)",
-                      },
-                    },
-                    [
-                      h("span", null, p.name || "未命名项目"),
-                      h("span", {
-                        style: {
-                          marginLeft: "auto",
-                          color: "var(--dsw-alias-fg-subtle, #666)",
-                          fontSize: 12,
-                        },
-                      },
-                      p.createdAt
-                        ? new Date(p.createdAt).toLocaleString()
-                        : ""),
-                    ],
-                  ),
-                ),
-              ),
-              state.projects.length === 0
-                ? h("p", {
+                [
+                  h("h4", {
                     style: {
-                      color: "var(--dsw-alias-fg-muted, #888)",
-                      margin: 0,
+                      margin: "0 0 8px 0",
+                      fontSize: 14,
+                      color: "var(--dsw-alias-fg-default, #111)",
                     },
-                  }, "暂无项目。使用上方表单创建一个项目。")
-                : null,
+                  }, "故事大纲 / 剧情摘要（占位）"),
+                  h("p", { style: { margin: "0 0 8px 0", color: "var(--dsw-alias-fg-muted, #888)" } }, "暂无大纲内容。"),
+                  h("h4", {
+                    style: {
+                      margin: "16px 0 8px 0",
+                      fontSize: 14,
+                      color: "var(--dsw-alias-fg-default, #111)",
+                    },
+                  }, "世界观与人物设定（占位）"),
+                  h("p", { style: { margin: "0 0 8px 0", color: "var(--dsw-alias-fg-muted, #888)" } }, "暂无资产设定摘要。"),
+                  h("h4", {
+                    style: {
+                      margin: "16px 0 8px 0",
+                      fontSize: 14,
+                      color: "var(--dsw-alias-fg-default, #111)",
+                    },
+                  }, "分镜脚本表格（占位）"),
+                  h("p", { style: { margin: 0, color: "var(--dsw-alias-fg-muted, #888)" } }, "本章暂无镜头。"),
+                ],
+              ),
             ],
           ),
         ],
       );
     }
+
+    // 新建项目弹窗（Modal + Input + Button，primitives）
+    function ProjectFormModal({ visible, onClose, onSubmit }) {
+      const [name, setName] = useState("");
+      const [genre, setGenre] = useState("");
+      const [logline, setLogline] = useState("");
+
+      if (!visible) return null;
+
+      return h(
+        Modal,
+        {
+          visible: true,
+          onClose,
+          title: "新建项目",
+        },
+        [
+          h(
+            "div",
+            { style: { display: "flex", flexDirection: "column", gap: "10px" } },
+            [
+              h(Input, {
+                placeholder: "项目名称",
+                value: name,
+                onChange: (e) => setName(e.target.value),
+                style: { width: "100%" },
+              }),
+              h(Input, {
+                placeholder: "类型（可选）",
+                value: genre,
+                onChange: (e) => setGenre(e.target.value),
+                style: { width: "100%" },
+              }),
+              h(Input, {
+                placeholder: "一句话梗概（可选）",
+                value: logline,
+                onChange: (e) => setLogline(e.target.value),
+                style: { width: "100%" },
+              }),
+              h(
+                "div",
+                { style: { display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "8px" } },
+                [
+                  h(
+                    Button,
+                    {
+                      variant: "ghost",
+                      onPress: onClose,
+                    },
+                    "取消",
+                  ),
+                  h(
+                    Button,
+                    {
+                      variant: "primary",
+                      onPress: () => {
+                        if (!name.trim()) return;
+                        onSubmit({ name: name.trim(), genre: genre.trim(), logline: logline.trim() });
+                      },
+                    },
+                    "保存",
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+
+    // 把新建项目弹窗合并进 StudioPanel 的返回树（由 StudioPanel 管理显隐）
+    // 注意：StudioPanel 内部未集成 ProjectFormModal，后续 2.2 阶段再集成。
+    // 此处导出 ProjectFormModal 供 StudioPanel 引用时使用；当前 client.js 先不注册该槽位。
 
     // ---- Sidebar menu entry (sidebar.panellist) ----
     //
@@ -335,6 +523,10 @@ window.__ModuleLoader__.load({
         [h("span", null, "📁"), h("span", null, "Capture")],
       );
     }
+
+    // 顶部栏占位状态（阶段 1 不持久化）
+    function linkOnState() { return false; }
+    function chapterState() { return "第 1 章"; }
 
     return {
       // only slots are required in Phase 1
