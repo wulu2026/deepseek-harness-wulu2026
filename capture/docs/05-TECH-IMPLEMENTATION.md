@@ -127,6 +127,60 @@
 | 8.1 | 8 | 底部智能体建议条（可折叠，阶段 1 不可交互占位，文案“暂无智能体建议”） | 待定 |
 | 9.1 | 9 | 全流程串联验证（`desktop` profile 安装成功，左侧 "Capture" 图标打开右侧侧边栏，中间对话框可见，项目列表 + 新建项目弹窗正常，无控制台报错） | 待定 |
 
+### 4.2 客户端模块结构（阶段 1 扩展中）
+
+为避免全部逻辑堆在 `client.js`，阶段 1 UI 扩展采用“入口工厂 + 子模块拆分”结构：
+
+#### 4.2.1 目录结构
+
+```
+client.js                  # 入口工厂：window.__ModuleLoader__.load，require 各模块，apply(ctx) 注册槽位，只做组件拼装
+client/
+  index.js                 # 统一导出所有组件
+  lib/
+    api.js                 # 封装 fetch /api/capture/*（GET state, POST projects…），统一 credentials/safeJson/错误包装
+    safeJson.js            # 安全 JSON 解析
+  hooks/
+    useCaptureProjects.js  # 封装 fetchProjects + loading/error 状态
+  components/
+    CapturePanel.js        # composer dock 徽章 “Capture N project(s)”
+    MenuEntry.js           # 侧边栏入口按钮（点击打开右侧工作室）
+    StudioPanel.js         # 右侧工作室页面容器：持有顶层状态，布局左右两列
+    TopBar.js              # 顶部栏：联动开关 + 章节切换器 + 项目/资产标签
+    LeftPanel.js           # 左侧区：项目列表 / 资源网格（按标签切换）
+    RightBoard.js          # 右侧故事板：故事大纲 + 世界观设定 + 分镜表格
+    ProjectList.js         # 项目列表（ProjectRow）
+    ProjectRow.js          # 单行：名称、类型 Tag、梗概、时间、悬停/选中
+    ProjectFormModal.js    # 新建项目弹窗（Modal + Input + Button）
+    AssetGrid.js           # 资源网格卡片（阶段 2+）
+    ShotTable.js           # 分镜脚本表格（10 列、横向滚动、状态徽章）
+    AssetDetailModal.js    # 资产详情弹窗（阶段 1+）
+    AgentSuggestionBar.js  # 底部智能体建议条（阶段 1+，占位）
+```
+
+#### 4.2.2 组件层级
+
+```
+StudioPanel（页面容器，持有全局状态）
+├── TopBar（顶部栏：联动开关 / 章节切换器 / 项目资产标签）
+├── LeftPanel（左侧区：项目列表 / 资源网格）
+│   ├── ProjectList → ProjectRow
+│   └── ProjectFormModal（弹窗，由 LeftPanel 控制显隐）
+└── RightBoard（右侧故事板：故事大纲 / 世界观设定 / 分镜表格）
+    └── ShotTable → ShotRow
+```
+
+#### 4.2.3 通信机制
+
+- **状态上提 + props 向下 / 回调向上**（首选）：`StudioPanel` 持有 `projects`、`selectedProjectId`、`activeTab` 等顶层状态，通过 props 传给子组件，子组件只负责渲染并通过回调通知上层，彼此隔离，不直接引用。
+- **轻量级发布/订阅总线**：用于非父子组件的跨层通信（如新建项目弹窗提交后通知右侧故事板刷新），几十行代码，不引入外部依赖。
+- **API 层封装**：所有 `fetch("/api/capture/*")` 集中到 `client/lib/api.js`，统一加 `credentials: "same-origin"`、`safeJson` 解析、错误包装，组件只调用 `api.createProject` 等函数。
+- **Modal 生命周期由父控制**：弹窗显隐由父组件状态控制，子组件只负责内部表单渲染，提交通过 `props.onSubmit` 回调。
+
+#### 4.2.4 与 `client.js` 的衔接
+
+`client.js` 仅保留入口工厂，负责 `require('./client/...')` 各模块，在 `apply(ctx)` 中把组件组合到 `conversation.composer.dock`、`sidebar.panellist`、`sidebar.right.pane.tab` 三个槽位，不再直接写组件 JSX。
+
 #### 1.1 已确认事项
 
 `rightbar` / `sidebar.right.pane.tab` 的开关机制已由 S2/Q4 确认：通过 `sidebar.panellist` 点击 `sidebarRight.openTab("capture")` 打开右侧 Capture工作室页面，中间对话框保持可见，右侧侧边栏随 DSH 窗口缩放（ADR-012）。

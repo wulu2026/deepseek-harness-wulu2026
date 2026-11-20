@@ -135,14 +135,16 @@ Capture 是 DeepSeek Harness (DSH) 的一个 **bundle 插件**，面向作家/�
 
 ### 5.3 客户端组件规范（阶段 1 扩展中）
 
-- `CapturePanel`（composer dock 徽章）：React 函数组件，`useState({ projects, error, loading })`，`useEffect` 挂载时 `fetch("/api/capture/state")`，通过 `safeJson` 解析，卸载时置 `active = false` 防止状态更新。
-- `StudioPanel`（右侧 Capture工作室页面）：`sidebar.right.pane.tab` 注册，key 为 `capture`，右侧侧边栏页面。左侧为 Capture工作室左侧区（项目列表、资源网格卡片），右侧为 Capture工作室右侧故事板（故事大纲 + 世界观与人物设定 + 分镜脚本表格）。全部组件沿用 `client.js` 已有风格：`window.__ModuleLoader__.load` 工厂、React `createElement` 手写组件、全部使用 `--dsw-alias-*` 主题 token、`safeJson` 护栏 + `active` 标志防止卸载后 setState。基础控件优先复用 `@deepseek-ai/dsh-client-ui-primitives`（Button/Input/Modal/Tag/Pill/StateDot/Menu 等），它是 DSH Web Shell 平台种子模块，运行时始终可 `require`，无需 `package.json` 声明；对话框使用 primitives 的 `Modal`，不再手写 `div` 覆盖层。
+- 入口工厂：`client.js` 保持 `window.__ModuleLoader__.load({ id: "@local/capture", factory(require) {...} })`，`apply(ctx)` 负责把子模块组合到 `conversation.composer.dock`、`sidebar.panellist`、`sidebar.right.pane.tab` 三个槽位，不再直接写组件 JSX。
+- 子模块全部放在 `client/` 目录（详见 `05-TECH-IMPLEMENTATION.md` §4.2）：`lib/api.js`（统一 fetch / safeJson）、`hooks/useCaptureProjects.js`、`components/*` 各单一职责组件。
+- 所有组件：React `createElement` 手写组件（无 JSX）、全部使用 `--dsw-alias-*` 主题 token、`safeJson` 护栏 + `active` 标志防止卸载后 setState。基础控件优先复用 `@deepseek-ai/dsh-client-ui-primitives`（Button/Input/Modal/Tag/Pill/StateDot/Menu 等），它是 DSH Web Shell 平台种子模块，运行时始终可 `require`，无需 `package.json` 声明；对话框使用 primitives 的 `Modal`，不再手写 `div` 覆盖层。
+- 通信机制：状态上提 + props 向下 / 回调向上（首选）；轻量级发布/订阅总线用于非父子跨层通信；Modal 显隐由父组件状态控制。
 
-### 5.4 阶段 1 UI 扩展清单（与 `05-TECH-IMPLEMENTATION.md` §4.1 对齐）
+### 5.4 阶段 1 UI 扩展清单（与 `05-TECH-IMPLEMENTATION.md` §4.1/§4.2 对齐）
 
 - 已完成：右侧侧边栏页面框架（key `capture`）、`sidebar.panellist` 入口、`conversation.composer.dock` 徽章。
 - 进行中：左侧区项目列表行 + 新建项目弹窗 + 提交调用 `POST /api/capture/projects`（基础控件使用 primitives 的 Button/Input/Modal）。
-- 待定：资产网格卡片（角色/场景/物品 Tab，徽章使用 primitives Tag）、故事大纲/剧情摘要、世界观与人物设定、分镜脚本表格（10 列、横向滚动、行内编辑占位、状态徽章使用 primitives Tag/StateDot）、顶部栏联动开关占位（使用 primitives Pill）、底部智能体建议条占位。
+- 待定：客户端模块拆分（client/lib, client/hooks, client/components）、资产网格卡片（角色/场景/物品 Tab，徽章使用 primitives Tag）、故事大纲/剧情摘要、世界观与人物设定、分镜脚本表格（10 列、横向滚动、行内编辑占位、状态徽章使用 primitives Tag/StateDot）、顶部栏联动开关占位（使用 primitives Pill）、底部智能体建议条占位。
 - 设计细节见 `02-PRODUCT-DESIGN.md` / `03-UI-DESIGN.md`。
 
 ---
