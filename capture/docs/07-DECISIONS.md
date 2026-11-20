@@ -142,3 +142,12 @@
 - 背景：实现文档早期规划了 `host/storage.js`、`models.js`、`services.js`、`tools.js`、`agents.js` 的拆分布局。
 - 决策：阶段 1 全部逻辑内联在 `index.js`，不建 `host/` 目录；当实体（章节/镜头/资产）与工具数量增长到单文件难以维护时再拆分，拆分时保持 `package.json` 的 `files` 与 `exports` 同步更新。
 - 后果：当前骨架单文件易读、安装面最小；拆分时机由下一轮扩展决定。
+
+## ADR-021 — 阶段 1 UI 实施：优先复用 `@deepseek-ai/dsh-client-ui-primitives`，先 UI 壳再绑 Host API
+
+- 状态：已接受
+- 日期：2026-11-20
+- 背景：阶段 1 骨架已完成并安装验证通过；下一步扩展 `StudioPanel`（右侧 Capture工作室页面）的项目列表、新建项目弹窗、资产网格、分镜脚本表格等 UI。
+- 决策：客户端半边沿用 `client.js` 已有风格——`window.__ModuleLoader__.load` 工厂、React `createElement` 手写组件。基础控件（按钮、输入框、模态框、标签/徽章、状态点、下拉菜单等）**一律优先复用 `@deepseek-ai/dsh-client-ui-primitives`**，它是 DSH Web Shell 的平台种子模块，运行时始终可 `require`，无需写入 `package.json` 任何依赖字段，也无需加入 `dsh.client.inject`。全部使用 `--dsw-*` 主题 token，避免硬编码颜色；`safeJson` 护栏 + `active` 标志防止卸载后 setState；对话框使用 primitives 的 `Modal`（自带焦点锁定、Esc 关闭、焦点恢复），不再手写 `div` 覆盖层。
+- 实施顺序：先扩展 `StudioPanel` UI 壳（项目列表/新建弹窗先绑定现有 `POST /api/capture/projects`；章节/镜头/资产先用本地 Mock 数据渲染），待 Host 侧补齐 `capture_chapter_*`/`capture_shot_*`/`capture_asset_*` 工具与 `/api/capture/*` 路由后再打通数据。
+- 后果：UI 可先于 Host API 完成验证；Mock 数据阶段不持久化，刷新后重置，需在代码中标注为占位。ADR-009（不导入 ui-primitives 作为运行时模块）已被本 ADR 替代：primitives 作为平台种子模块可直接 `require`，不构成运行时依赖。
