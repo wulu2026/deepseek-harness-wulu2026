@@ -1,5 +1,5 @@
 // Safe JSON parsing for fetch responses. Returns { ok, error?, message? } envelope.
-export async function safeJson(response) {
+async function safeJson(response) {
   const contentType = response.headers.get("content-type") || "";
   if (!contentType.includes("application/json")) {
     const text = await response.text();
@@ -11,3 +11,5 @@ export async function safeJson(response) {
     return { ok: false, error: "INVALID_JSON", message: String(e?.message ?? e) };
   }
 }
+
+module.exports = { safeJson };
