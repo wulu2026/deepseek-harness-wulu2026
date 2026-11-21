@@ -92,6 +92,123 @@ window.__ModuleLoader__.load({
         if (typeof onTabChange === "function") onTabChange(tab);
       };
 
+      // ---- ProjectRow（项目列表行，2.1 阶段）----
+      // 每行显示：项目名（加粗）+ 类型标签 + 一句话梗概（1 行溢出省略）+ 创建时间 + 最后修改时间。
+      // 悬停高亮；选中后背景加深。
+      function ProjectRow({ project, selected, onSelect }) {
+        const [hovered, setHovered] = React.useState(false);
+        const name = project.name || "未命名项目";
+        const genre = project.genre || "无类型";
+        const logline = project.logline || "";
+        const createdAt = project.createdAt ? new Date(project.createdAt).toLocaleString() : "";
+        const updatedAt = project.updatedAt ? new Date(project.updatedAt).toLocaleString() : "";
+
+        return h(
+          "li",
+          {
+            key: project.id,
+            onClick: () => {
+              if (typeof onSelect === "function") onSelect(project.id);
+            },
+            onMouseEnter: () => setHovered(true),
+            onMouseLeave: () => setHovered(false),
+            style: {
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              padding: "10px 12px",
+              borderBottom: "1px solid var(--dsw-alias-stroke-muted, #f0f0f0)",
+              fontSize: 14,
+              color: "var(--dsw-alias-fg-default, #111)",
+              cursor: "pointer",
+              background: selected
+                ? "var(--dsw-alias-bg-accent, #eef6ff)"
+                : hovered
+                  ? "var(--dsw-alias-bg-layer-default, #fafafa)"
+                  : "var(--dsw-alias-bg-surface, #fff)",
+            },
+          },
+          [
+            h(
+              "div",
+              {
+                style: {
+                  flex: 1,
+                  minWidth: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "4px",
+                },
+              },
+              [
+                h(
+                  "div",
+                  {
+                    style: {
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    },
+                  },
+                  [
+                    h(
+                      "span",
+                      {
+                        style: {
+                          fontWeight: 600,
+                          color: "var(--dsw-alias-fg-default, #111)",
+                          overflow: "hidden",
+                          whiteSpace: "nowrap",
+                          textOverflow: "ellipsis",
+                          minWidth: 0,
+                        },
+                      },
+                      name,
+                    ),
+                    h(Tag, { active: false, label: genre }),
+                  ],
+                ),
+                logline
+                  ? h(
+                      "p",
+                      {
+                        style: {
+                          margin: 0,
+                          fontSize: 12,
+                          color: "var(--dsw-alias-fg-muted, #888)",
+                          overflow: "hidden",
+                          whiteSpace: "nowrap",
+                          textOverflow: "ellipsis",
+                          minWidth: 0,
+                        },
+                      },
+                      logline,
+                    )
+                  : null,
+              ],
+            ),
+            h(
+              "div",
+              {
+                style: {
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-end",
+                  gap: "2px",
+                  fontSize: 12,
+                  color: "var(--dsw-alias-fg-subtle, #666)",
+                  whiteSpace: "nowrap",
+                },
+              },
+              [
+                h("span", null, createdAt),
+                h("span", null, updatedAt),
+              ],
+            ),
+          ],
+        );
+      }
+
       const header = h(
         "div",
         {
@@ -147,56 +264,12 @@ window.__ModuleLoader__.load({
             { style: { listStyle: "none", padding: 0, margin: 0 } },
             projects.map((p) => {
               const selected = selectedProjectId === p.id;
-              return h(
-                "li",
-                {
-                  key: p.id,
-                  onClick: () => {
-                    if (typeof onSelectProject === "function") onSelectProject(p.id);
-                  },
-                  style: {
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                    padding: "10px 12px",
-                    borderBottom: "1px solid var(--dsw-alias-stroke-muted, #f0f0f0)",
-                    fontSize: 14,
-                    color: "var(--dsw-alias-fg-default, #111)",
-                    background: selected
-                      ? "var(--dsw-alias-bg-accent, #eef6ff)"
-                      : "var(--dsw-alias-bg-surface, #fff)",
-                    cursor: "pointer",
-                  },
-                },
-                [
-                  h(
-                    "span",
-                    {
-                      style: {
-                        fontWeight: 600,
-                        color: "var(--dsw-alias-fg-default, #111)",
-                        overflow: "hidden",
-                        whiteSpace: "nowrap",
-                        textOverflow: "ellipsis",
-                        minWidth: 0,
-                      },
-                    },
-                    p.name || "未命名项目",
-                  ),
-                  h(
-                    "span",
-                    {
-                      style: {
-                        marginLeft: "auto",
-                        fontSize: 12,
-                        color: "var(--dsw-alias-fg-subtle, #666)",
-                        whiteSpace: "nowrap",
-                      },
-                    },
-                    p.createdAt ? new Date(p.createdAt).toLocaleString() : "",
-                  ),
-                ],
-              );
+              return h(ProjectRow, {
+                key: p.id,
+                project: p,
+                selected,
+                onSelect: onSelectProject,
+              });
             }),
           );
 
