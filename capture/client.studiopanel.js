@@ -7,7 +7,7 @@ window.__ModuleLoader__.load({
   chunk: "client.studiopanel.js",
   factory(require) {
     const React = require("react");
-    const { useState, useEffect, useCallback } = React;
+    const { useState, useEffect } = React;
     const h = React.createElement;
     // DSH Web Shell 平台种子模块，运行时始终可 require，无需 package.json 声明（ADR-021）。
     const { Button, Input, Modal, Tag } = require("@deepseek-ai/dsh-client-ui-primitives");
@@ -309,22 +309,42 @@ window.__ModuleLoader__.load({
       const [activeTab, setActiveTab] = useState("project");
       const [chapter, setChapter] = useState("第 1 章");
 
-      const fetchProjects = useCallback(async () => {
-        try {
-          const result = await fetchState();
-          if (result?.ok) {
-            setState((s) => ({ ...s, projects: result.projects || [], error: null, loading: false }));
-          } else {
-            setState((s) => ({ ...s, error: result?.error || "STATE_FAILED", loading: false }));
-          }
-        } catch (e) {
-          setState((s) => ({ ...s, error: String(e?.message ?? e), loading: false }));
-        }
-      }, []);
-
+      // ---- 数据获取（带卸载标志，避免在已卸载组件上 setState）----
+      // 沿用 CapturePanel 的 active 模式：异步请求完成前若组件已卸载，
+      // 则不再执行 setState，避免 React 对已卸载组件的状态更新警告。
       useEffect(() => {
-        fetchProjects();
-      }, [fetchProjects]);
+        let active = true;
+        (async () => {
+          try {
+            const result = await fetchState();
+            if (!active) return;
+            if (result?.ok) {
+              setState((s) => ({
+                ...s,
+                projects: result.projects || [],
+                error: null,
+                loading: false,
+              }));
+            } else {
+              setState((s) => ({
+                ...s,
+                error: result?.error || "STATE_FAILED",
+                loading: false,
+              }));
+            }
+          } catch (e) {
+            if (!active) return;
+            setState((s) => ({
+              ...s,
+              error: String(e?.message ?? e),
+              loading: false,
+            }));
+          }
+        })();
+        return () => {
+          active = false;
+        };
+      }, []);
 
       const handleSelectProject = (id) => { setSelectedProjectId(id); };
       const handleTabChange = (tab) => { setActiveTab(tab); };
