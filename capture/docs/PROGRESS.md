@@ -59,7 +59,7 @@
 ## 4. 下一步（按优先级）
 
 1. **客户端模块化重构**：按 `05-TECH-IMPLEMENTATION.md` §4.2 把 `client.js` 拆分为入口工厂 + `client.studiopanel.js` 包内动态 chunk（自包含 TopBar / LeftPanel / RightBoard / StudioPanel 及 API 封装），`client.js` 只做组件拼装与槽位注册。包内动态 chunk 使用包根 `client.studiopanel.js` 命名并通过 `require.async()` 加载（ADR-022）。
-2. **阶段 1 UI 扩展实现**：按 `05-TECH-IMPLEMENTATION.md` §4.1 子任务顺序，先扩展 `StudioPanel`（顶部栏/左右两列布局 → 项目列表/新建项目弹窗 → 资产网格 → 分镜脚本表格 → 顶部栏/联动开关占位 → 智能体建议条占位），UI 壳先于 Host API 绑定，章节/镜头/资产先用本地 Mock 数据。
+2. **阶段 1 UI 扩展实现**：按 `05-TECH-IMPLEMENTATION.md` §4.1 子任务顺序，子任务 1.2（StudioPanel 顶部栏 + 左右两列布局，章节切换器位于右侧故事板顶部）已完成；下一步按顺序实现项目列表行完整化（类型标签、一句话梗概、创建/修改时间、悬停/选中）→ 新建项目弹窗 → 资产网格 → 分镜脚本表格 → 顶部栏/联动开关占位 → 智能体建议条占位，UI 壳先于 Host API 绑定，章节/镜头/资产先用本地 Mock 数据。
 3. **S3 智能体预设可用性技术验证**（阻塞智能体感知 `capture.*` 工具）。
 4. **S4 作业服务技术验证**（阻塞长生成进度）。
 5. **S5 媒体提供商技术验证**（可与阶段 1 并行，但先做探测）。
@@ -116,6 +116,7 @@
 - 2026-11-11：阶段 1 Host/Client 骨架代码完成（`index.js`、`client.js`）；修复 P0（systemPrompt section disposer 未被 `ctx.effect` 托管，导致重载崩溃）；客户端引入 `safeJson`。
 - 2026-11-11：骨架安装到 `desktop` profile 并冒烟通过；工具、服务、路由、客户端面板均正常。
 - 2026-11-12：更新 PROGRESS / 04 / 05 / 07 / 08 文档，记录阶段 1 实现细节与全部已知问题修复。
+- 2026-11-21：完成子任务 1.2（StudioPanel 顶部栏 + 左右两列布局）；章节切换器从顶部栏移至右侧故事板顶部；项目/资产改为可交互 Pill 标签；更新 `03-UI-DESIGN.md` §5.1、`02-PRODUCT-DESIGN.md` §4.1/§4.3、`05-TECH-IMPLEMENTATION.md` §4.1 与本文档 §4。
 
 ---
 
