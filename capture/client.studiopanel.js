@@ -43,7 +43,7 @@ window.__ModuleLoader__.load({
     }
 
     // ---- TopBar（顶部栏，内联）----
-    function TopBar({ onToggleLink, onChapterChange, onTabChange, activeTab, chapter }) {
+    function TopBar({ onToggleLink }) {
       const linkOn = false; // 阶段 1 占位，固定关闭，仅视觉反馈
       return h(
         "div",
@@ -353,12 +353,6 @@ window.__ModuleLoader__.load({
             onToggleLink: () => {
               // 阶段 1 占位：仅视觉反馈
             },
-            onChapterChange: handleChapterChange,
-            onTabChange: () => {
-              // 阶段 1 占位：不做标签切换
-            },
-            activeTab,
-            chapter,
           }),
           h(
             "div",
