@@ -87,7 +87,7 @@ window.__ModuleLoader__.load({
     }
 
     // ---- LeftPanel（左侧区，内联）----
-    function LeftPanel({ projects, selectedProjectId, onSelectProject, activeTab, onTabChange }) {
+    function LeftPanel({ projects, selectedProjectId, onSelectProject, activeTab, onTabChange, showCreateModal, setShowCreateModal, createForm, setCreateForm, onCreateProject }) {
       const handleTabSwitch = (tab) => {
         if (typeof onTabChange === "function") onTabChange(tab);
       };
@@ -276,7 +276,85 @@ window.__ModuleLoader__.load({
       return h(
         "div",
         { style: { display: "flex", flexDirection: "column", gap: 0 } },
-        [header, content],
+        [
+          header,
+          content,
+          // 底部新建项目按钮（2.2 阶段）
+          h(
+            "div",
+            { style: { marginTop: "12px", display: "flex", justifyContent: "flex-end" } },
+            [
+              h(Button, {
+                onClick: () => setShowCreateModal(true),
+                variant: "primary",
+              }, "新建项目"),
+            ],
+          ),
+          // 新建项目弹窗（2.2/2.3 阶段）
+          showCreateModal
+            ? h(
+                Modal,
+                {
+                  open: true,
+                  onClose: () => setShowCreateModal(false),
+                  title: "新建项目",
+                  closeLabel: "关闭新建项目",
+                },
+                [
+                  h(
+                    "div",
+                    { style: { display: "flex", flexDirection: "column", gap: "12px" } },
+                    [
+                      h(Input, {
+                        value: createForm.name,
+                        onChange: (e) =>
+                          setCreateForm({ ...createForm, name: e.target.value }),
+                        placeholder: "项目名称",
+                      }),
+                      h(Input, {
+                        value: createForm.genre,
+                        onChange: (e) =>
+                          setCreateForm({ ...createForm, genre: e.target.value }),
+                        placeholder: "类型（可选）",
+                      }),
+                      h(Input, {
+                        value: createForm.logline,
+                        onChange: (e) =>
+                          setCreateForm({ ...createForm, logline: e.target.value }),
+                        placeholder: "一句话梗概（可选）",
+                      }),
+                      h(
+                        "div",
+                        {
+                          style: {
+                            display: "flex",
+                            justifyContent: "flex-end",
+                            gap: "8px",
+                            marginTop: "8px",
+                          },
+                        },
+                        [
+                          h(Button, {
+                            onClick: () => setShowCreateModal(false),
+                          }, "取消"),
+                          h(Button, {
+                            onClick: () => {
+                              if (!createForm.name?.trim()) return;
+                              onCreateProject({
+                                ...createForm,
+                                name: createForm.name.trim(),
+                              });
+                            },
+                            variant: "primary",
+                          }, "保存"),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              )
+            : null,
+        ],
       );
     }
 
@@ -381,47 +459,70 @@ window.__ModuleLoader__.load({
       const [selectedProjectId, setSelectedProjectId] = useState(null);
       const [activeTab, setActiveTab] = useState("project");
       const [chapter, setChapter] = useState("第 1 章");
+      const [showCreateModal, setShowCreateModal] = useState(false);
+      const [createForm, setCreateForm] = useState({ name: "", genre: "", logline: "" });
 
       // ---- 数据获取（带卸载标志，避免在已卸载组件上 setState）----
       // 沿用 CapturePanel 的 active 模式：异步请求完成前若组件已卸载，
       // 则不再执行 setState，避免 React 对已卸载组件的状态更新警告。
-      useEffect(() => {
-        let active = true;
-        (async () => {
-          try {
-            const result = await fetchState();
-            if (!active) return;
-            if (result?.ok) {
-              setState((s) => ({
-                ...s,
-                projects: result.projects || [],
-                error: null,
-                loading: false,
-              }));
-            } else {
-              setState((s) => ({
-                ...s,
-                error: result?.error || "STATE_FAILED",
-                loading: false,
-              }));
-            }
-          } catch (e) {
-            if (!active) return;
+      const activeRef = React.useRef(true);
+
+      const fetchProjects = async () => {
+        try {
+          const result = await fetchState();
+          if (!activeRef.current) return;
+          if (result?.ok) {
             setState((s) => ({
               ...s,
-              error: String(e?.message ?? e),
+              projects: result.projects || [],
+              error: null,
+              loading: false,
+            }));
+          } else {
+            setState((s) => ({
+              ...s,
+              error: result?.error || "STATE_FAILED",
               loading: false,
             }));
           }
-        })();
+        } catch (e) {
+          if (!activeRef.current) return;
+          setState((s) => ({
+            ...s,
+            error: String(e?.message ?? e),
+            loading: false,
+          }));
+        }
+      };
+
+      useEffect(() => {
+        activeRef.current = true;
+        fetchProjects();
         return () => {
-          active = false;
+          activeRef.current = false;
         };
       }, []);
 
       const handleSelectProject = (id) => { setSelectedProjectId(id); };
       const handleTabChange = (tab) => { setActiveTab(tab); };
       const handleChapterChange = (nextChapter) => { setChapter(nextChapter); };
+
+      // ---- 新建项目：提交 POST /api/capture/projects，成功后刷新列表并清空表单 ----
+      const handleCreateProject = async (form) => {
+        try {
+          const result = await createProject(form);
+          if (result?.ok) {
+            setShowCreateModal(false);
+            setCreateForm({ name: "", genre: "", logline: "" });
+            await fetchProjects();
+          } else {
+            alert(result?.error || "创建项目失败");
+          }
+        } catch (e) {
+          console.error("[capture] createProject failed:", e);
+          alert("创建项目失败：" + String(e?.message ?? e));
+        }
+      };
 
       if (state.loading) {
         return h("div", { style: { padding: "16px", color: "var(--dsw-alias-fg-muted, #888)", textAlign: "center" } }, "加载中…");
@@ -479,6 +580,11 @@ window.__ModuleLoader__.load({
                     onSelectProject: handleSelectProject,
                     activeTab,
                     onTabChange: handleTabChange,
+                    showCreateModal,
+                    setShowCreateModal,
+                    createForm,
+                    setCreateForm,
+                    onCreateProject: handleCreateProject,
                   }),
                 ],
               ),
