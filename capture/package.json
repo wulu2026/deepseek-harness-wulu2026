@@ -6,14 +6,14 @@
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",
-    "./client.topbar.js": "./client.topbar.js",
+    "./client.studiopanel.js": "./client.studiopanel.js",
     "./locale/*.json": "./locale/*.json",
     "./icon": "./icon.svg"
   },
   "files": [
     "index.js",
     "client.js",
-    "client.topbar.js",
+    "client.studiopanel.js",
     "host/*.js",
     "cordis.patch.yml",
     "locale/*",

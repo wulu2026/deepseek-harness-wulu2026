@@ -134,29 +134,11 @@
 #### 4.2.1 目录结构
 
 ```
-client.js                  # 入口工厂：window.__ModuleLoader__.load，require 各模块，apply(ctx) 注册槽位，只做组件拼装
-client/
-  index.js                 # 统一导出所有组件
-  lib/
-    api.js                 # 封装 fetch /api/capture/*（GET state, POST projects…），统一 credentials/safeJson/错误包装
-    safeJson.js            # 安全 JSON 解析
-  hooks/
-    useCaptureProjects.js  # 封装 fetchProjects + loading/error 状态
-  components/
-    CapturePanel.js        # composer dock 徽章 “Capture N project(s)”
-    MenuEntry.js           # 侧边栏入口按钮（点击打开右侧工作室）
-    StudioPanel.js         # 右侧工作室页面容器：持有顶层状态，布局左右两列
-    TopBar.js              # 顶部栏：联动开关 + 章节切换器 + 项目/资产标签
-    LeftPanel.js           # 左侧区：项目列表 / 资源网格（按标签切换）
-    RightBoard.js          # 右侧故事板：故事大纲 + 世界观设定 + 分镜表格
-    ProjectList.js         # 项目列表（ProjectRow）
-    ProjectRow.js          # 单行：名称、类型 Tag、梗概、时间、悬停/选中
-    ProjectFormModal.js    # 新建项目弹窗（Modal + Input + Button）
-    AssetGrid.js           # 资源网格卡片（阶段 2+）
-    ShotTable.js           # 分镜脚本表格（10 列、横向滚动、状态徽章）
-    AssetDetailModal.js    # 资产详情弹窗（阶段 1+）
-    AgentSuggestionBar.js  # 底部智能体建议条（阶段 1+，占位）
+client.js                  # 入口工厂：window.__ModuleLoader__.load，React.lazy + require.async 加载 chunk，apply(ctx) 注册槽位，只做组件拼装
+client.studiopanel.js      # 包内动态 chunk（自包含）：TopBar / LeftPanel / RightBoard / StudioPanel 及 API 封装，全部内联于该 chunk
 ```
+
+> 包内动态 chunk 位于包根，按 `client.<name>.js` 命名（ADR-022）。入口 `factory(require)` 保持同步，通过组件 `React.lazy` 与 `require.async("./client.studiopanel.js")` 在挂载时加载；不得使用同步相对 `require()` 或目录式 chunk 名。chunk 内部的静态依赖（safeJson、API、各子组件）均内联于该 chunk，不引用兄弟 chunk 或外部相对模块。
 
 #### 4.2.2 组件层级
 
@@ -174,12 +156,12 @@ StudioPanel（页面容器，持有全局状态）
 
 - **状态上提 + props 向下 / 回调向上**（首选）：`StudioPanel` 持有 `projects`、`selectedProjectId`、`activeTab` 等顶层状态，通过 props 传给子组件，子组件只负责渲染并通过回调通知上层，彼此隔离，不直接引用。
 - **轻量级发布/订阅总线**：用于非父子组件的跨层通信（如新建项目弹窗提交后通知右侧故事板刷新），几十行代码，不引入外部依赖。
-- **API 层封装**：所有 `fetch("/api/capture/*")` 集中到 `client/lib/api.js`，统一加 `credentials: "same-origin"`、`safeJson` 解析、错误包装，组件只调用 `api.createProject` 等函数。
+- **API 层封装**：所有 `fetch("/api/capture/*")` 封装内联于 `client.studiopanel.js` chunk，统一加 `credentials: "same-origin"`、`safeJson` 解析、错误包装，供该 chunk 内部组件调用。
 - **Modal 生命周期由父控制**：弹窗显隐由父组件状态控制，子组件只负责内部表单渲染，提交通过 `props.onSubmit` 回调。
 
 #### 4.2.4 与 `client.js` 的衔接
 
-`client.js` 是入口工厂，在 `apply(ctx)` 中把组件组合到 `conversation.composer.dock`、`sidebar.panellist`、`sidebar.right.pane.tab` 三个槽位，不再直接承载全部组件实现。入口 `factory(require)` 保持同步，包内动态 chunk 使用包根 `client.<name>.js` 文件名，并由组件 `React.lazy` 与 `require.async("./client.<name>.js")` 在挂载时加载；chunk 注册 `chunk: "client.<name>.js"`，不得使用同步相对 `require()` 或任意目录式 chunk 名。
+`client.js` 是入口工厂，在 `apply(ctx)` 中把组件组合到 `conversation.composer.dock`、`sidebar.panellist`、`sidebar.right.pane.tab` 三个槽位，不再直接承载全部组件实现。入口 `factory(require)` 保持同步，`StudioPanel` 由 `React.lazy` + `require.async("./client.studiopanel.js")` 在挂载时异步加载，并用 `React.Suspense` 包裹；chunk 注册声明 `id: "@local/capture"` 与 `chunk: "client.studiopanel.js"`，不得使用同步相对 `require()` 或任意目录式 chunk 名。
 
 #### 1.1 已确认事项
 

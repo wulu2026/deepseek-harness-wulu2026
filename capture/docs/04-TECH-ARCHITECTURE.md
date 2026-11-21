@@ -144,7 +144,7 @@ Capture 是 DeepSeek Harness (DSH) 的一个 **bundle 插件**，面向作家/�
 
 - 已完成：右侧侧边栏页面框架（key `capture`）、`sidebar.panellist` 入口、`conversation.composer.dock` 徽章。
 - 进行中：左侧区项目列表行 + 新建项目弹窗 + 提交调用 `POST /api/capture/projects`（基础控件使用 primitives 的 Button/Input/Modal）。
-- 待定：客户端模块拆分（client/lib, client/hooks, client/components）、资产网格卡片（角色/场景/物品 Tab，徽章使用 primitives Tag）、故事大纲/剧情摘要、世界观与人物设定、分镜脚本表格（10 列、横向滚动、行内编辑占位、状态徽章使用 primitives Tag/StateDot）、顶部栏联动开关占位（使用 primitives Pill）、底部智能体建议条占位。
+- 待定：左侧区项目列表行（类型 Tag、一句话梗概、悬停/选中，子任务 2.1）、新建项目弹窗（Modal / Input / Button，子任务 2.2）、提交接口调用（子任务 2.3）、资产网格卡片（角色/场景/物品 Tab，徽章使用 primitives Tag，子任务 3.1）、故事大纲 / 剧情摘要（子任务 4.1）、世界观与人物设定（子任务 5.1）、分镜脚本表格（10 列、横向滚动、状态徽章使用 primitives Tag/StateDot，子任务 6.1）、顶部栏联动开关占位（使用 primitives Pill，子任务 7.1）、底部智能体建议条占位（子任务 8.1）。
 - 设计细节见 `02-PRODUCT-DESIGN.md` / `03-UI-DESIGN.md`。
 
 ---
