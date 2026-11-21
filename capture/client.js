@@ -169,7 +169,8 @@ window.__ModuleLoader__.load({
             const dispose = sidebarRightTabs.register(tabDefinition);
 
             // 推荐：把注销器放进 ctx.effect，插件卸载时自动清理
-            ctx.effect(() => dispose, "capture:sidebar-tab-type");
+            // 直接传入 disposer，卸载/HMR 时 ctx.effect 会调用它；若传箭头函数只返回不调用，Tab 类型会残留。
+            ctx.effect(dispose, "capture:sidebar-tab-type");
 
             console.log("[capture] registered tabDefinition:", JSON.stringify(tabDefinition));
             console.log("[capture] tab registered OK");
