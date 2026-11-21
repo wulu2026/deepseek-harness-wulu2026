@@ -158,6 +158,14 @@
 - **提交**：`edf3f7fae1 fix(capture): Tab 类型注销器未被调用`
 - **ADR**：ADR-016
 
+### 10. StudioPanel 数据获取缺少卸载标志
+
+- **现象**：组件在 `fetchState()` 异步完成前卸载时，`setState` 会在已卸载组件上执行，React 会报对已卸载组件的状态更新警告。
+- **原因**：`client.studiopanel.js` 中 `fetchProjects` 使用 `useCallback`，`useEffect` 直接调用，没有卸载守卫；异步请求完成后不检查组件是否已卸载。
+- **修复**：沿用 `CapturePanel` 的 `active` 模式，在 `useEffect` 内使用 `let active = true`，每个 `setState` 前检查 `if (!active) return`，cleanup 时置 `active = false`；移除已不再使用的 `useCallback`。
+- **提交**：`88a6126180 fix(capture): StudioPanel 数据获取缺少卸载标志`
+- **ADR**：ADR-016（注册/副作用清理规则）
+
 ### 验证证据（2026-11-11 安装后）
 
 - `plugin_manager list_bundles`：`@local/capture` `enabled: true`、`installed: true`、`application: applied`。
