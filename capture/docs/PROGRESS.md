@@ -58,7 +58,7 @@
 
 ## 4. 下一步（按优先级）
 
-1. **客户端模块化重构**：按 `05-TECH-IMPLEMENTATION.md` §4.2 把 `client.js` 拆分为入口工厂 + `client/lib` + `client/hooks` + `client/components` 子模块（项目列表/新建项目弹窗先迁移），`client.js` 只做组件拼装与槽位注册。
+1. **客户端模块化重构**：按 `05-TECH-IMPLEMENTATION.md` §4.2 把 `client.js` 拆分为入口工厂 + `client/lib` + `client/hooks` + `client/components` 子模块（项目列表/新建项目弹窗先迁移），`client.js` 只做组件拼装与槽位注册。包内动态 chunk 使用包根 `client.<name>.js` 命名并通过 `require.async()` 加载（ADR-022）。
 2. **阶段 1 UI 扩展实现**：按 `05-TECH-IMPLEMENTATION.md` §4.1 子任务顺序，先扩展 `StudioPanel`（顶部栏/左右两列布局 → 项目列表/新建项目弹窗 → 资产网格 → 分镜脚本表格 → 顶部栏/联动开关占位 → 智能体建议条占位），UI 壳先于 Host API 绑定，章节/镜头/资产先用本地 Mock 数据。
 3. **S3 智能体预设可用性技术验证**（阻塞智能体感知 `capture.*` 工具）。
 4. **S4 作业服务技术验证**（阻塞长生成进度）。

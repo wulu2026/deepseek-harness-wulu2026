@@ -136,7 +136,7 @@ Capture 是 DeepSeek Harness (DSH) 的一个 **bundle 插件**，面向作家/�
 ### 5.3 客户端组件规范（阶段 1 扩展中）
 
 - 入口工厂：`client.js` 保持 `window.__ModuleLoader__.load({ id: "@local/capture", factory(require) {...} })`，`apply(ctx)` 负责把子模块组合到 `conversation.composer.dock`、`sidebar.panellist`、`sidebar.right.pane.tab` 三个槽位，不再直接写组件 JSX。
-- 子模块全部放在 `client/` 目录（详见 `05-TECH-IMPLEMENTATION.md` §4.2）：`lib/api.js`（统一 fetch / safeJson）、`hooks/useCaptureProjects.js`、`components/*` 各单一职责组件。
+- 子模块放在 `client/` 目录（详见 `05-TECH-IMPLEMENTATION.md` §4.2）。包内动态 chunk 位于包根，文件名必须为 `client.<name>.js`；入口 `factory(require)` 保持同步，通过组件 `React.lazy` 调用 `require.async("./client.<name>.js")` 加载。同步相对 `require()` 不属于当前客户端模块系统。
 - 所有组件：React `createElement` 手写组件（无 JSX）、全部使用 `--dsw-alias-*` 主题 token、`safeJson` 护栏 + `active` 标志防止卸载后 setState。基础控件优先复用 `@deepseek-ai/dsh-client-ui-primitives`（Button/Input/Modal/Tag/Pill/StateDot/Menu 等），它是 DSH Web Shell 平台种子模块，运行时始终可 `require`，无需 `package.json` 声明；对话框使用 primitives 的 `Modal`，不再手写 `div` 覆盖层。
 - 通信机制：状态上提 + props 向下 / 回调向上（首选）；轻量级发布/订阅总线用于非父子跨层通信；Modal 显隐由父组件状态控制。
 

@@ -179,7 +179,7 @@ StudioPanel（页面容器，持有全局状态）
 
 #### 4.2.4 与 `client.js` 的衔接
 
-`client.js` 仅保留入口工厂，负责 `require('./client/...')` 各模块，在 `apply(ctx)` 中把组件组合到 `conversation.composer.dock`、`sidebar.panellist`、`sidebar.right.pane.tab` 三个槽位，不再直接写组件 JSX。
+`client.js` 是入口工厂，在 `apply(ctx)` 中把组件组合到 `conversation.composer.dock`、`sidebar.panellist`、`sidebar.right.pane.tab` 三个槽位，不再直接承载全部组件实现。入口 `factory(require)` 保持同步，包内动态 chunk 使用包根 `client.<name>.js` 文件名，并由组件 `React.lazy` 与 `require.async("./client.<name>.js")` 在挂载时加载；chunk 注册 `chunk: "client.<name>.js"`，不得使用同步相对 `require()` 或任意目录式 chunk 名。
 
 #### 1.1 已确认事项
 

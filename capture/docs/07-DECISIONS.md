@@ -151,3 +151,11 @@
 - 决策：客户端半边沿用 `client.js` 已有风格——`window.__ModuleLoader__.load` 工厂、React `createElement` 手写组件。基础控件（按钮、输入框、模态框、标签/徽章、状态点、下拉菜单等）**一律优先复用 `@deepseek-ai/dsh-client-ui-primitives`**，它是 DSH Web Shell 的平台种子模块，运行时始终可 `require`，无需写入 `package.json` 任何依赖字段，也无需加入 `dsh.client.inject`。全部使用 `--dsw-*` 主题 token，避免硬编码颜色；`safeJson` 护栏 + `active` 标志防止卸载后 setState；对话框使用 primitives 的 `Modal`（自带焦点锁定、Esc 关闭、焦点恢复），不再手写 `div` 覆盖层。
 - 实施顺序：先扩展 `StudioPanel` UI 壳（项目列表/新建弹窗先绑定现有 `POST /api/capture/projects`；章节/镜头/资产先用本地 Mock 数据渲染），待 Host 侧补齐 `capture_chapter_*`/`capture_shot_*`/`capture_asset_*` 工具与 `/api/capture/*` 路由后再打通数据。
 - 后果：UI 可先于 Host API 完成验证；Mock 数据阶段不持久化，刷新后重置，需在代码中标注为占位。ADR-009（不导入 ui-primitives 作为运行时模块）已被本 ADR 替代：primitives 作为平台种子模块可直接 `require`，不构成运行时依赖。
+
+## ADR-022 — Capture 包内动态 chunk 命名与加载
+
+- 状态：已接受
+- 日期：2026-11-21
+- 背景：把 TopBar 从入口内联拆出后，`require("./client/components/TopBar.chunk.js")` 和目录式异步路径会让客户端工厂抛异常，使侧栏入口等注册失效。
+- 决策：包内动态 chunk 放在包根，按 `client.<name>.js` 命名；入口 `factory(require)` 保持同步，由组件 `React.lazy` 调用 `require.async("./client.<name>.js")`；chunk 注册声明 `id: "@local/capture"` 与 `chunk: "client.<name>.js"`。同步相对依赖、目录式 chunk 名和异步入口 factory 均不受模块系统支持。
+- 后果：新增 chunk 时必须同步更新 `package.json` 的 `exports`、`files` 和发布清单，并保留入口工厂的基础注册可用性。
