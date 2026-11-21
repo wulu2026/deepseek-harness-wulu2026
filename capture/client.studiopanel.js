@@ -82,58 +82,67 @@ window.__ModuleLoader__.load({
               h("span", null, linkOn ? "联动：开" : "联动：关"),
             ],
           ),
-          // 章节切换器（原生 <select>，阶段 1 静态选项）
-          h(
-            "select",
-            {
-              value: chapter || "第 1 章",
-              onChange: (e) => {
-                if (typeof onChapterChange === "function") onChapterChange(e.target.value);
-              },
-              style: {
-                padding: "6px 10px",
-                border: "1px solid var(--dsw-alias-stroke-default, #ccc)",
-                borderRadius: "6px",
-                fontSize: 13,
-                color: "var(--dsw-alias-fg-default, #111)",
-                background: "var(--dsw-alias-bg-surface, #fff)",
-                cursor: "pointer",
-              },
-            },
-            [
-              h("option", { value: "第 1 章" }, "第 1 章"),
-              h("option", { value: "第 2 章" }, "第 2 章"),
-              h("option", { value: "第 3 章" }, "第 3 章"),
-            ],
-          ),
-          // 项目 / 资产 标签切换（Tag 仅作只读徽章显示，使用 children 方式）
-          h(Tag, null, "项目"),
-          h(Tag, null, "资产"),
         ],
       );
     }
 
     // ---- LeftPanel（左侧区，内联）----
-    function LeftPanel({ projects, selectedProjectId, onSelectProject, activeTab }) {
-      if (activeTab === "asset") {
-        return h(
-          "div",
-          {
-            style: {
-              padding: "12px 0",
-              color: "var(--dsw-alias-fg-muted, #888)",
-              fontSize: 13,
-              textAlign: "center",
-            },
-          },
-          "资产网格（阶段 2+）",
-        );
-      }
-      return h(
+    function LeftPanel({ projects, selectedProjectId, onSelectProject, activeTab, onTabChange }) {
+      const handleTabSwitch = (tab) => {
+        if (typeof onTabChange === "function") onTabChange(tab);
+      };
+
+      const header = h(
         "div",
-        { style: { display: "flex", flexDirection: "column", gap: 0 } },
+        {
+          style: {
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: "12px",
+          },
+        },
         [
+          h("h3", {
+            style: {
+              margin: 0,
+              fontSize: 15,
+              color: "var(--dsw-alias-fg-default, #111)",
+            },
+          }, activeTab === "project" ? "项目" : "资产"),
           h(
+            "div",
+            { style: { display: "flex", gap: "6px" } },
+            [
+              h(Tag, {
+                active: activeTab === "project",
+                onPress: () => handleTabSwitch("project"),
+                label: "项目",
+              }),
+              h(Tag, {
+                active: activeTab === "asset",
+                onPress: () => handleTabSwitch("asset"),
+                label: "资产",
+              }),
+            ],
+          ),
+        ],
+      );
+
+      const content = activeTab === "asset"
+        ? h(
+            "div",
+            {
+              style: {
+                padding: "12px 0",
+                color: "var(--dsw-alias-fg-muted, #888)",
+                fontSize: 13,
+                textAlign: "center",
+              },
+            },
+            "资产网格（阶段 2+）",
+          )
+        : h(
             "ul",
             { style: { listStyle: "none", padding: 0, margin: 0 } },
             projects.map((p) => {
@@ -189,21 +198,12 @@ window.__ModuleLoader__.load({
                 ],
               );
             }),
-          ),
-          projects.length === 0
-            ? h(
-                "p",
-                {
-                  style: {
-                    color: "var(--dsw-alias-fg-muted, #888)",
-                    margin: 0,
-                    padding: "12px 0",
-                  },
-                },
-                "暂无项目。使用上方表单创建一个项目。",
-              )
-            : null,
-        ],
+          );
+
+      return h(
+        "div",
+        { style: { display: "flex", flexDirection: "column", gap: 0 } },
+        [header, content],
       );
     }
 
@@ -236,13 +236,56 @@ window.__ModuleLoader__.load({
         ],
       );
     }
-    function RightBoard({ chapter }) {
+    function RightBoard({ chapter, onChapterChange }) {
       return h(
         "div",
         { style: { display: "flex", flexDirection: "column", gap: "12px" } },
         [
+          // 右侧故事板顶部章节选择器
+          h(
+            "div",
+            {
+              style: {
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                paddingBottom: "8px",
+                borderBottom: "1px solid var(--dsw-alias-stroke-muted, #e5e5e5)",
+              },
+            },
+            [
+              h("span", {
+                style: {
+                  fontSize: 13,
+                  color: "var(--dsw-alias-fg-muted, #888)",
+                },
+              }, "章节："),
+              h(
+                "select",
+                {
+                  value: chapter || "第 1 章",
+                  onChange: (e) => {
+                    if (typeof onChapterChange === "function") onChapterChange(e.target.value);
+                  },
+                  style: {
+                    padding: "6px 10px",
+                    border: "1px solid var(--dsw-alias-stroke-default, #ccc)",
+                    borderRadius: "6px",
+                    fontSize: 13,
+                    color: "var(--dsw-alias-fg-default, #111)",
+                    background: "var(--dsw-alias-bg-surface, #fff)",
+                    cursor: "pointer",
+                  },
+                },
+                [
+                  h("option", { value: "第 1 章" }, "第 1 章"),
+                  h("option", { value: "第 2 章" }, "第 2 章"),
+                  h("option", { value: "第 3 章" }, "第 3 章"),
+                ],
+              ),
+            ],
+          ),
           h(CollapsibleSection, { title: "故事大纲 / 剧情摘要" }, [
-            h("h4", { style: { margin: "0 0 6px 0", fontSize: 13, color: "var(--dsw-alias-fg-default, #111)" } }, "章节：" + (chapter || "第 1 章")),
             h("p", { style: { margin: "0 0 6px 0", color: "var(--dsw-alias-fg-muted, #888)" } }, "暂无大纲内容。"),
           ]),
           h(CollapsibleSection, { title: "世界观与人物设定" }, [
@@ -343,18 +386,12 @@ window.__ModuleLoader__.load({
                   },
                 },
                 [
-                  h("h3", {
-                    style: {
-                      margin: "0 0 12px 0",
-                      fontSize: 15,
-                      color: "var(--dsw-alias-fg-default, #111)",
-                    },
-                  }, activeTab === "project" ? "项目" : "资产"),
                   h(LeftPanel, {
                     projects: state.projects,
                     selectedProjectId,
                     onSelectProject: handleSelectProject,
                     activeTab,
+                    onTabChange: handleTabChange,
                   }),
                 ],
               ),
