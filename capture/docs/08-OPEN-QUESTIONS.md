@@ -152,10 +152,10 @@
 
 ### 9. 右侧 Tab 类型注销器未被调用
 
-- **现象**：插件卸载 / HMR 时，`capture` Tab 类型可能残留在 `sidebarRightTabs` 中，重复注册可能冲突或导致陈旧 Tab 类型驻留。
-- **原因**：`client.js` 中 `ctx.effect(() => dispose, "capture:sidebar-tab-type")` 传入箭头函数，函数只返回 disposer 不会调用它；`ctx.effect` 在卸载时不会真正执行注销。
-- **修复**：改为直接传入 disposer `ctx.effect(dispose, "capture:sidebar-tab-type")`，卸载/HMR 时由 `ctx.effect` 调用 `dispose()` 注销 Tab 类型，符合 ADR-016“注册即 effect”规则。
-- **提交**：`edf3f7fae1 fix(capture): Tab 类型注销器未被调用`
+- **现象**：点击插件入口打开右侧 Capture工作室面板时报 `sidebarRight: no tab type is registered as "capture"`，页面无法打开。
+- **原因**：`client.js` 中 `ctx.effect(dispose, "capture:sidebar-tab-type")` 直接把 disposer 当作工厂函数传入；`ctx.effect` 会立即调用传入函数，导致 `dispose()` 被立即执行，Tab 类型在注册后随即被注销。
+- **修复**：改为工厂函数 `ctx.effect(() => dispose, "capture:sidebar-tab-type")`，`dispose` 仅在插件卸载/HMR 时由 `ctx.effect` 调用，Tab 类型正常保留，符合 ADR-016“注册即 effect”规则。
+- **提交**：`d3991d9ffe fix(capture): 恢复 Tab 注销器为工厂函数形式`（`edf3f7fae1` 为误改已回退）
 - **ADR**：ADR-016
 
 ### 10. StudioPanel 数据获取缺少卸载标志
