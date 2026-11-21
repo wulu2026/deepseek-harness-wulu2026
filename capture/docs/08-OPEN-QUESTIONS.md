@@ -150,6 +150,14 @@
 - **修复**：重写 04/05/07/08/PROGRESS，使文档与已安装验证的代码一致。
 - **提交**：本次文档更新
 
+### 9. 右侧 Tab 类型注销器未被调用
+
+- **现象**：插件卸载 / HMR 时，`capture` Tab 类型可能残留在 `sidebarRightTabs` 中，重复注册可能冲突或导致陈旧 Tab 类型驻留。
+- **原因**：`client.js` 中 `ctx.effect(() => dispose, "capture:sidebar-tab-type")` 传入箭头函数，函数只返回 disposer 不会调用它；`ctx.effect` 在卸载时不会真正执行注销。
+- **修复**：改为直接传入 disposer `ctx.effect(dispose, "capture:sidebar-tab-type")`，卸载/HMR 时由 `ctx.effect` 调用 `dispose()` 注销 Tab 类型，符合 ADR-016“注册即 effect”规则。
+- **提交**：`edf3f7fae1 fix(capture): Tab 类型注销器未被调用`
+- **ADR**：ADR-016
+
 ### 验证证据（2026-11-11 安装后）
 
 - `plugin_manager list_bundles`：`@local/capture` `enabled: true`、`installed: true`、`application: applied`。

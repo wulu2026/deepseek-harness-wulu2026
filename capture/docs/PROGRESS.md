@@ -118,6 +118,7 @@
 - 2026-11-12：更新 PROGRESS / 04 / 05 / 07 / 08 文档，记录阶段 1 实现细节与全部已知问题修复。
 - 2026-11-21：完成子任务 1.2（StudioPanel 顶部栏 + 左右两列布局）；章节切换器从顶部栏移至右侧故事板顶部；项目/资产改为可交互 Pill 标签；更新 `03-UI-DESIGN.md` §5.1、`02-PRODUCT-DESIGN.md` §4.1/§4.3、`05-TECH-IMPLEMENTATION.md` §4.1 与本文档 §4。
 - 2026-11-21：文档布局描述修正：页面顶部仅保留联动开关；项目/资产切换位于左侧区域上方；章节切换器位于右侧故事板顶部。同步修正 `03-UI-DESIGN.md` §5.1、`02-PRODUCT-DESIGN.md` §4.1。
+- 2026-11-21：修复 `client.js` 中右侧 Tab 类型注销器未被调用（`ctx.effect(() => dispose, ...)` → `ctx.effect(dispose, ...)`），记录到 `08-OPEN-QUESTIONS.md` "已知问题修复记录" 第 9 条，ADR-016。
 
 ---
 
