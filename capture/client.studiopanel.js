@@ -716,7 +716,15 @@ window.__ModuleLoader__.load({
               : h("p", { style: { margin: "4px 0 0 0", fontSize: 13, color: "var(--dsw-alias-fg-muted, #888)" } }, "暂无节拍内容。"),
           ]),
           h(CollapsibleSection, { title: "世界观与人物设定" }, [
-            h("p", { style: { margin: 0, fontSize: 13, color: "var(--dsw-alias-fg-muted, #888)" } }, "暂无资产设定摘要。"),
+            // 阶段 1 静态占位：展示当前项目资产设定摘要（角色、场景、物品、风格包）
+            h("div", { style: { fontSize: 13, color: "var(--dsw-alias-fg-default, #111)" } }, "角色："),
+            h("p", { style: { margin: "0 0 8px 0", fontSize: 13, color: "var(--dsw-alias-fg-muted, #888)" } }, "林夕——故事主角，年轻剑客，性格直率，擅长青龙剑。"),
+            h("div", { style: { fontSize: 13, color: "var(--dsw-alias-fg-default, #111)" } }, "场景："),
+            h("p", { style: { margin: "0 0 8px 0", fontSize: 13, color: "var(--dsw-alias-fg-muted, #888)" } }, "竹林小径——开篇重要场景，翠竹掩映，溪水潺潺。"),
+            h("div", { style: { fontSize: 13, color: "var(--dsw-alias-fg-default, #111)" } }, "物品："),
+            h("p", { style: { margin: "0 0 8px 0", fontSize: 13, color: "var(--dsw-alias-fg-muted, #888)" } }, "青龙剑——主角随身武器，传说可斩妖除魔。"),
+            h("div", { style: { fontSize: 13, color: "var(--dsw-alias-fg-default, #111)" } }, "风格包："),
+            h("p", { style: { margin: "0 0 0 0", fontSize: 13, color: "var(--dsw-alias-fg-muted, #888)" } }, "暂无风格包设定。"),
           ]),
           h(CollapsibleSection, { title: "分镜脚本表格" }, [
             h("p", { style: { margin: 0, fontSize: 13, color: "var(--dsw-alias-fg-muted, #888)" } }, "本章暂无镜头。"),
