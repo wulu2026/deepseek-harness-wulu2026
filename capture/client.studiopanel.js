@@ -648,7 +648,8 @@ window.__ModuleLoader__.load({
         ],
       );
     }
-    function RightBoard({ chapter, onChapterChange }) {
+    function RightBoard({ chapter, chapters, onChapterChange }) {
+      const currentChapter = chapters.find((c) => c.title === chapter) || chapters[0];
       return h(
         "div",
         { style: { display: "flex", flexDirection: "column", gap: "12px" } },
@@ -698,7 +699,21 @@ window.__ModuleLoader__.load({
             ],
           ),
           h(CollapsibleSection, { title: "故事大纲 / 剧情摘要" }, [
-            h("p", { style: { margin: "0 0 6px 0", color: "var(--dsw-alias-fg-muted, #888)" } }, "暂无大纲内容。"),
+            // 章节标题
+            h("h4", { style: { margin: "0 0 6px 0", fontSize: 13, color: "var(--dsw-alias-fg-default, #111)" } }, currentChapter?.title || chapter || "第 1 章"),
+            // 一句话梗概
+            currentChapter?.synopsis
+              ? h("p", { style: { margin: "0 0 8px 0", fontSize: 13, color: "var(--dsw-alias-fg-default, #111)" } }, currentChapter.synopsis)
+              : h("p", { style: { margin: "0 0 8px 0", fontSize: 13, color: "var(--dsw-alias-fg-muted, #888)" } }, "暂无一句话梗概。"),
+            // 关键节拍列表
+            h("div", { style: { fontSize: 13, color: "var(--dsw-alias-fg-default, #111)" } }, "关键节拍："),
+            currentChapter?.beats?.length
+              ? h(
+                  "ul",
+                  { style: { margin: "0 0 0 0", paddingLeft: "16px" } },
+                  currentChapter.beats.map((beat, i) => h("li", { key: i, style: { marginBottom: "4px", fontSize: 13, color: "var(--dsw-alias-fg-default, #111)" } }, beat)),
+                )
+              : h("p", { style: { margin: "4px 0 0 0", fontSize: 13, color: "var(--dsw-alias-fg-muted, #888)" } }, "暂无节拍内容。"),
           ]),
           h(CollapsibleSection, { title: "世界观与人物设定" }, [
             h("p", { style: { margin: 0, fontSize: 13, color: "var(--dsw-alias-fg-muted, #888)" } }, "暂无资产设定摘要。"),
@@ -720,6 +735,27 @@ window.__ModuleLoader__.load({
       const [selectedProjectId, setSelectedProjectId] = useState(null);
       const [activeTab, setActiveTab] = useState("project");
       const [chapter, setChapter] = useState("第 1 章");
+      // 4.1 阶段：章节 Mock 数据（Host chapters API 待补齐后切换到真实接口）
+      const [chapters, setChapters] = useState([
+        {
+          id: "chapter-1",
+          title: "第 1 章",
+          synopsis: "主角发现神秘遗迹，踏上寻宝之旅。",
+          beats: ["遗迹入口发现", "遇到首个守护者", "获得线索碎片"],
+        },
+        {
+          id: "chapter-2",
+          title: "第 2 章",
+          synopsis: "主角深入遗迹内部，揭开历史真相。",
+          beats: ["地下密室探索", "解读古老壁画", "面对最终抉择"],
+        },
+        {
+          id: "chapter-3",
+          title: "第 3 章",
+          synopsis: "主角带着秘密返回故乡，迎接新的挑战。",
+          beats: ["返回故乡", "与旧识重逢", "新危机爆发"],
+        },
+      ]);
       const [showCreateModal, setShowCreateModal] = useState(false);
       const [createForm, setCreateForm] = useState({ name: "", genre: "", logline: "" });
 
@@ -860,7 +896,7 @@ window.__ModuleLoader__.load({
                     padding: "12px",
                   },
                 },
-                [h(RightBoard, { chapter })],
+                [h(RightBoard, { chapter, chapters, onChapterChange: handleChapterChange })],
               ),
             ],
           ),
