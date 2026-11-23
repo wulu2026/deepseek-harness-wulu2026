@@ -10,7 +10,7 @@ window.__ModuleLoader__.load({
     const { useState, useEffect } = React;
     const h = React.createElement;
     // DSH Web Shell 平台种子模块，运行时始终可 require，无需 package.json 声明（ADR-021）。
-    const { Button, Input, Modal, Tag } = require("@deepseek-ai/dsh-client-ui-primitives");
+    const { Button, Input, Modal, Pill, Tag } = require("@deepseek-ai/dsh-client-ui-primitives");
 
     // ---- Safe JSON（内联，避免依赖外部模块）----
     async function safeJson(response) {
@@ -91,6 +91,113 @@ window.__ModuleLoader__.load({
       const handleTabSwitch = (tab) => {
         if (typeof onTabChange === "function") onTabChange(tab);
       };
+
+      // ---- 资产状态（3.1 阶段，本地 Mock 数据，Host API 待补齐后切换）----
+      const [assetType, setAssetType] = React.useState("character");
+      const [showAssetDetail, setShowAssetDetail] = React.useState(false);
+      const [selectedAsset, setSelectedAsset] = React.useState(null);
+      const [showCreateAssetModal, setShowCreateAssetModal] = React.useState(false);
+      const [createAssetForm, setCreateAssetForm] = React.useState({
+        name: "",
+        description: "",
+      });
+
+      const MOCK_ASSETS = [
+        {
+          id: "asset-1",
+          name: "主角 - 林夕",
+          kind: "character",
+          description: "故事的主角，年轻剑客",
+          version: 1,
+        },
+        {
+          id: "asset-2",
+          name: "道具 - 青龙剑",
+          kind: "prop",
+          description: "主角的随身武器",
+          version: 1,
+        },
+        {
+          id: "asset-3",
+          name: "场景 - 竹林小径",
+          kind: "location",
+          description: "开篇重要场景",
+          version: 1,
+        },
+      ];
+
+      const filteredAssets = MOCK_ASSETS.filter((a) => a.kind === assetType);
+
+      // ---- AssetCard（资产网格卡片，3.1 阶段）----
+      function AssetCard({ asset, onSelect }) {
+        return h(
+          "div",
+          {
+            onClick: () => {
+              if (typeof onSelect === "function") onSelect(asset);
+            },
+            style: {
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "8px",
+              width: "140px",
+              padding: "12px",
+              border: "1px solid var(--dsw-alias-stroke-muted, #e5e5e5)",
+              borderRadius: "8px",
+              background: "var(--dsw-alias-bg-surface, #fff)",
+              cursor: "pointer",
+            },
+          },
+          [
+            // 缩略图占位
+            h(
+              "div",
+              {
+                style: {
+                  width: "100%",
+                  height: "100px",
+                  borderRadius: "6px",
+                  background: "var(--dsw-alias-bg-layer-default, #fafafa)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "var(--dsw-alias-fg-muted, #888)",
+                  fontSize: 12,
+                },
+              },
+              "无缩略图",
+            ),
+            h(
+              "span",
+              {
+                style: {
+                  fontWeight: 600,
+                  fontSize: 13,
+                  color: "var(--dsw-alias-fg-default, #111)",
+                  overflow: "hidden",
+                  whiteSpace: "nowrap",
+                  textOverflow: "ellipsis",
+                  minWidth: 0,
+                  textAlign: "center",
+                },
+              },
+              asset.name,
+            ),
+            h(Tag, { active: false, label: asset.kind }),
+            h(
+              "span",
+              {
+                style: {
+                  fontSize: 11,
+                  color: "var(--dsw-alias-fg-subtle, #666)",
+                },
+              },
+              `v${asset.version}`,
+            ),
+          ],
+        );
+      }
 
       // ---- ProjectRow（项目列表行，2.1 阶段）----
       // 每行显示：项目名（加粗）+ 类型标签 + 一句话梗概（1 行溢出省略）+ 创建时间 + 最后修改时间。
@@ -231,16 +338,14 @@ window.__ModuleLoader__.load({
             "div",
             { style: { display: "flex", gap: "6px" } },
             [
-              h(Tag, {
+              h(Pill, {
                 active: activeTab === "project",
-                onPress: () => handleTabSwitch("project"),
-                label: "项目",
-              }),
-              h(Tag, {
+                onClick: () => handleTabSwitch("project"),
+              }, "项目"),
+              h(Pill, {
                 active: activeTab === "asset",
-                onPress: () => handleTabSwitch("asset"),
-                label: "资产",
-              }),
+                onClick: () => handleTabSwitch("asset"),
+              }, "资产"),
             ],
           ),
         ],
@@ -249,15 +354,55 @@ window.__ModuleLoader__.load({
       const content = activeTab === "asset"
         ? h(
             "div",
-            {
-              style: {
-                padding: "12px 0",
-                color: "var(--dsw-alias-fg-muted, #888)",
-                fontSize: 13,
-                textAlign: "center",
-              },
-            },
-            "资产网格（阶段 2+）",
+            { style: { display: "flex", flexDirection: "column", gap: "12px" } },
+            [
+              // 资产类型横向 Tab
+              h(
+                "div",
+                { style: { display: "flex", gap: "6px" } },
+                [
+                  h(Pill, {
+                    active: assetType === "character",
+                    onClick: () => setAssetType("character"),
+                  }, "角色"),
+                  h(Pill, {
+                    active: assetType === "location",
+                    onClick: () => setAssetType("location"),
+                  }, "场景"),
+                  h(Pill, {
+                    active: assetType === "prop",
+                    onClick: () => setAssetType("prop"),
+                  }, "物品"),
+                ],
+              ),
+              // 资产网格（2-3 列自适应）
+              h(
+                "div",
+                {
+                  style: {
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+                    gap: "12px",
+                  },
+                },
+                filteredAssets.length > 0
+                  ? filteredAssets.map((a) =>
+                      h(AssetCard, { key: a.id, asset: a, onSelect: (a) => { setSelectedAsset(a); setShowAssetDetail(true); } }),
+                    )
+                  : h(
+                      "div",
+                      {
+                        style: {
+                          padding: "24px 0",
+                          color: "var(--dsw-alias-fg-muted, #888)",
+                          fontSize: 13,
+                          textAlign: "center",
+                        },
+                      },
+                      "暂无资产，点击“新建资产”创建",
+                    ),
+              ),
+            ],
           )
         : h(
             "ul",
@@ -279,19 +424,33 @@ window.__ModuleLoader__.load({
         [
           header,
           content,
-          // 底部新建项目按钮（2.2 阶段）
-          h(
-            "div",
-            { style: { marginTop: "12px", display: "flex", justifyContent: "flex-end" } },
-            [
-              h(Button, {
-                onClick: () => setShowCreateModal(true),
-                variant: "primary",
-              }, "新建项目"),
-            ],
-          ),
-          // 新建项目弹窗（2.2/2.3 阶段）
-          showCreateModal
+          // 底部按钮（按当前模式显示）
+          activeTab === "project"
+            ? h(
+                "div",
+                { style: { marginTop: "12px", display: "flex", justifyContent: "flex-end" } },
+                [
+                  h(Button, {
+                    onClick: () => setShowCreateModal(true),
+                    variant: "primary",
+                  }, "新建项目"),
+                ],
+              )
+            : h(
+                "div",
+                { style: { marginTop: "12px", display: "flex", justifyContent: "flex-end" } },
+                [
+                  h(Button, {
+                    onClick: () => {
+                      setCreateAssetForm({ name: "", description: "" });
+                      setShowCreateAssetModal(true);
+                    },
+                    variant: "primary",
+                  }, "新建资产"),
+                ],
+              ),
+          // 新建项目弹窗（仅项目模式）
+          activeTab === "project" && showCreateModal
             ? h(
                 Modal,
                 {
@@ -344,6 +503,108 @@ window.__ModuleLoader__.load({
                                 ...createForm,
                                 name: createForm.name.trim(),
                               });
+                            },
+                            variant: "primary",
+                          }, "保存"),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              )
+            : null,
+          // 资产详情占位弹窗（仅资产模式）
+          activeTab === "asset" && showAssetDetail
+            ? h(
+                Modal,
+                {
+                  open: true,
+                  onClose: () => setShowAssetDetail(false),
+                  title: "资产详情",
+                  closeLabel: "关闭资产详情",
+                },
+                [
+                  h(
+                    "div",
+                    { style: { display: "flex", flexDirection: "column", gap: "12px" } },
+                    [
+                      h("p", null, selectedAsset
+                        ? `名称：${selectedAsset.name}`
+                        : "未选择资产"),
+                      h("p", null, selectedAsset ? `类型：${selectedAsset.kind}` : ""),
+                      h("p", null, selectedAsset ? `描述：${selectedAsset.description}` : ""),
+                      h("p", null, selectedAsset ? `版本：v${selectedAsset.version}` : ""),
+                      h(
+                        "div",
+                        {
+                          style: {
+                            display: "flex",
+                            justifyContent: "flex-end",
+                            marginTop: "8px",
+                          },
+                        },
+                        [
+                          h(Button, {
+                            onClick: () => setShowAssetDetail(false),
+                          }, "关闭"),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              )
+            : null,
+          // 新建资产弹窗（仅资产模式）
+          activeTab === "asset" && showCreateAssetModal
+            ? h(
+                Modal,
+                {
+                  open: true,
+                  onClose: () => setShowCreateAssetModal(false),
+                  title: "新建资产",
+                  closeLabel: "关闭新建资产",
+                },
+                [
+                  h(
+                    "div",
+                    { style: { display: "flex", flexDirection: "column", gap: "12px" } },
+                    [
+                      h(Input, {
+                        value: createAssetForm.name,
+                        onChange: (e) =>
+                          setCreateAssetForm({ ...createAssetForm, name: e.target.value }),
+                        placeholder: "资产名称",
+                      }),
+                      h(Input, {
+                        value: createAssetForm.description,
+                        onChange: (e) =>
+                          setCreateAssetForm({
+                            ...createAssetForm,
+                            description: e.target.value,
+                          }),
+                        placeholder: "资产描述（可选）",
+                      }),
+                      h(
+                        "div",
+                        {
+                          style: {
+                            display: "flex",
+                            justifyContent: "flex-end",
+                            gap: "8px",
+                            marginTop: "8px",
+                          },
+                        },
+                        [
+                          h(Button, {
+                            onClick: () => setShowCreateAssetModal(false),
+                          }, "取消"),
+                          h(Button, {
+                            onClick: () => {
+                              if (!createAssetForm.name?.trim()) return;
+                              setShowCreateAssetModal(false);
+                              setCreateAssetForm({ name: "", description: "" });
+                              // 3.1 阶段为 Mock 数据，不持久化，刷新后重置
+                              alert(`已新建资产：${createAssetForm.name.trim()}（Mock，不持久化）`);
                             },
                             variant: "primary",
                           }, "保存"),
