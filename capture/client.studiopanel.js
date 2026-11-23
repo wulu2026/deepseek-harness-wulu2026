@@ -648,8 +648,9 @@ window.__ModuleLoader__.load({
         ],
       );
     }
-    function RightBoard({ chapter, chapters, onChapterChange }) {
+    function RightBoard({ chapter, chapters, shots, onChapterChange }) {
       const currentChapter = chapters.find((c) => c.title === chapter) || chapters[0];
+      const [selectedShotId, setSelectedShotId] = useState(null);
       return h(
         "div",
         { style: { display: "flex", flexDirection: "column", gap: "12px" } },
@@ -727,7 +728,116 @@ window.__ModuleLoader__.load({
             h("p", { style: { margin: "0 0 0 0", fontSize: 13, color: "var(--dsw-alias-fg-muted, #888)" } }, "暂无风格包设定。"),
           ]),
           h(CollapsibleSection, { title: "分镜脚本表格" }, [
-            h("p", { style: { margin: 0, fontSize: 13, color: "var(--dsw-alias-fg-muted, #888)" } }, "本章暂无镜头。"),
+            h("div", { style: { fontSize: 13, color: "var(--dsw-alias-fg-default, #111)" } }, "本章镜头列表："),
+            h(
+              "div",
+              { style: { overflowX: "auto", marginTop: "8px" } },
+              h(
+                "table",
+                {
+                  style: {
+                    width: "max-content",
+                    minWidth: "100%",
+                    borderCollapse: "collapse",
+                    fontSize: "12px",
+                  },
+                },
+                [
+                  h("thead", null,
+                    h(
+                      "tr",
+                      {
+                        style: {
+                          background: "var(--dsw-alias-bg-layer-default, #fafafa)",
+                          borderBottom: "1px solid var(--dsw-alias-stroke-muted, #e5e5e5)",
+                        },
+                      },
+                      [
+                        h("th", { style: { padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "var(--dsw-alias-fg-muted, #888)" } }, "编号"),
+                        h("th", { style: { padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "var(--dsw-alias-fg-muted, #888)" } }, "时长(秒)"),
+                        h("th", { style: { padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "var(--dsw-alias-fg-muted, #888)" } }, "景别/角度"),
+                        h("th", { style: { padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "var(--dsw-alias-fg-muted, #888)" } }, "运镜"),
+                        h("th", { style: { padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "var(--dsw-alias-fg-muted, #888)" } }, "画面描述"),
+                        h("th", { style: { padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "var(--dsw-alias-fg-muted, #888)" } }, "角色/动作"),
+                        h("th", { style: { padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "var(--dsw-alias-fg-muted, #888)" } }, "台词/旁白"),
+                        h("th", { style: { padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "var(--dsw-alias-fg-muted, #888)" } }, "音效/音乐"),
+                        h("th", { style: { padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "var(--dsw-alias-fg-muted, #888)" } }, "资产绑定"),
+                        h("th", { style: { padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "var(--dsw-alias-fg-muted, #888)" } }, "状态"),
+                      ],
+                    ),
+                  ),
+                  h(
+                    "tbody",
+                    null,
+                    shots.length > 0
+                      ? shots.map((s) => {
+                          const selected = selectedShotId === s.id;
+                          const statusStyle = {
+                            done: { bg: "#eef6ff", color: "#0066cc" },
+                            pending: { bg: "#f5f5f5", color: "#888" },
+                            review: { bg: "#fff3cd", color: "#856404" },
+                          }[s.status] || { bg: "#f5f5f5", color: "#888" };
+                          return h(
+                            "tr",
+                            {
+                              key: s.id,
+                              onClick: () => setSelectedShotId(s.id),
+                              style: {
+                                borderBottom: "1px solid var(--dsw-alias-stroke-muted, #f0f0f0)",
+                                background: selected
+                                  ? "var(--dsw-alias-bg-accent, #eef6ff)"
+                                  : "var(--dsw-alias-bg-surface, #fff)",
+                                cursor: "pointer",
+                              },
+                            },
+                            [
+                              h("td", { style: { padding: "6px 8px", fontSize: 12 } }, s.no),
+                              h("td", { style: { padding: "6px 8px", fontSize: 12 } }, s.durationSec),
+                              h("td", { style: { padding: "6px 8px", fontSize: 12 } }, s.type),
+                              h("td", { style: { padding: "6px 8px", fontSize: 12 } }, s.camera),
+                              h("td", { style: { padding: "6px 8px", fontSize: 12, color: "var(--dsw-alias-fg-muted, #888)" } }, s.description),
+                              h("td", { style: { padding: "6px 8px", fontSize: 12 } }, s.characters),
+                              h("td", { style: { padding: "6px 8px", fontSize: 12, color: "var(--dsw-alias-fg-muted, #888)" } }, s.dialogue || "—"),
+                              h("td", { style: { padding: "6px 8px", fontSize: 12 } }, s.audio),
+                              h("td", { style: { padding: "6px 8px", fontSize: 12 } }, s.assetBindings.length ? s.assetBindings.join(",") : "—"),
+                              h(
+                                "td",
+                                { style: { padding: "6px 8px" } },
+                                h(
+                                  "span",
+                                  {
+                                    style: {
+                                      display: "inline-block",
+                                      padding: "2px 8px",
+                                      borderRadius: "4px",
+                                      background: statusStyle.bg,
+                                      color: statusStyle.color,
+                                      fontSize: 11,
+                                    },
+                                  },
+                                  s.status === "done" ? "完成" : s.status === "pending" ? "排队" : "待审核",
+                                ),
+                              ),
+                            ],
+                          );
+                        })
+                      : h(
+                          "tr",
+                          null,
+                          h("td", {
+                            colSpan: 10,
+                            style: {
+                              padding: "24px 0",
+                              color: "var(--dsw-alias-fg-muted, #888)",
+                              textAlign: "center",
+                              fontSize: 13,
+                            },
+                          }, "本章暂无镜头。"),
+                        ),
+                  ),
+                ],
+              ),
+            ),
           ]),
         ],
       );
@@ -762,6 +872,48 @@ window.__ModuleLoader__.load({
           title: "第 3 章",
           synopsis: "主角带着秘密返回故乡，迎接新的挑战。",
           beats: ["返回故乡", "与旧识重逢", "新危机爆发"],
+        },
+      ]);
+      // 6.1 阶段：分镜脚本 Mock 数据（Host shots API 待补齐后切换到真实接口）
+      const [shots, setShots] = useState([
+        {
+          id: "shot-1",
+          no: 1,
+          durationSec: 5,
+          type: "全景 / 正面",
+          camera: "推镜头",
+          description: "主角站在遗迹入口，环顾四周。",
+          characters: "林夕",
+          dialogue: "",
+          audio: "风声",
+          assetBindings: [],
+          status: "done",
+        },
+        {
+          id: "shot-2",
+          no: 2,
+          durationSec: 8,
+          type: "中景 / 侧面",
+          camera: "静止",
+          description: "主角走向守护者，拔出青龙剑。",
+          characters: "林夕，守护者",
+          dialogue: "挡住我的路，我就不客气了。",
+          audio: "剑鸣",
+          assetBindings: ["青龙剑"],
+          status: "pending",
+        },
+        {
+          id: "shot-3",
+          no: 3,
+          durationSec: 6,
+          type: "近景 / 45度",
+          camera: "跟随",
+          description: "青龙剑斩击，光芒闪过。",
+          characters: "林夕",
+          dialogue: "",
+          audio: "砍击声",
+          assetBindings: ["青龙剑"],
+          status: "review",
         },
       ]);
       const [showCreateModal, setShowCreateModal] = useState(false);
@@ -904,7 +1056,7 @@ window.__ModuleLoader__.load({
                     padding: "12px",
                   },
                 },
-                [h(RightBoard, { chapter, chapters, onChapterChange: handleChapterChange })],
+                [h(RightBoard, { chapter, chapters, shots, onChapterChange: handleChapterChange })],
               ),
             ],
           ),
